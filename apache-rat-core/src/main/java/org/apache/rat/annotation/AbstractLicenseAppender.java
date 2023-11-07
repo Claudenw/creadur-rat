@@ -31,7 +31,9 @@ import java.io.InputStreamReader;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Add a license header to a document. This appender does not check for the
@@ -72,6 +74,8 @@ public abstract class AbstractLicenseAppender {
     private static final int TYPE_MD = 28;
     private static final int TYPE_YAML = 29;
     private static final int TYPE_CQL = 31;
+    private static final int TYPE_PS1 = 32;
+    private static final int TYPE_RST = 33;
     
     
 
@@ -101,8 +105,15 @@ public abstract class AbstractLicenseAppender {
     private static final int[] FAMILY_VELOCITY = new int[]{
             TYPE_VM,
     };
+    private static final int[] FAMILY_PS = new int[]{
+            TYPE_PS1,
+    };
+    private static final int[] FAMILY_RST = new int[]{
+            TYPE_RST,
+    };
     private static final int[] EXPECTS_HASH_PLING = new int[]{
             TYPE_PYTHON, TYPE_SH, TYPE_RUBY, TYPE_PERL, TYPE_TCL,
+            TYPE_GROOVY,
     };
     private static final int[] EXPECTS_AT_ECHO = new int[]{
             TYPE_BAT,
@@ -120,7 +131,9 @@ public abstract class AbstractLicenseAppender {
             TYPE_VISUAL_STUDIO_SOLUTION,
     };
 
+    private static final Map<String, Integer> EXACT_FILENAME_MATCH = new HashMap<>();
     private static final Map<String, Integer> EXT2TYPE = new HashMap<>();
+    private static final Set<String> IGNORE = new HashSet<>();
 
     static {
         // these arrays are used in Arrays.binarySearch so they must
@@ -131,6 +144,7 @@ public abstract class AbstractLicenseAppender {
         Arrays.sort(FAMILY_BAT);
         Arrays.sort(FAMILY_APT);
         Arrays.sort(FAMILY_VELOCITY);
+        Arrays.sort(FAMILY_PS);
 
         Arrays.sort(EXPECTS_HASH_PLING);
         Arrays.sort(EXPECTS_AT_ECHO);
@@ -174,10 +188,12 @@ public abstract class AbstractLicenseAppender {
         EXT2TYPE.put("pl", TYPE_PERL);
         EXT2TYPE.put("pm", TYPE_PM);
         EXT2TYPE.put("properties", TYPE_PROPERTIES);
+        EXT2TYPE.put("ps1",  TYPE_PS1);
         EXT2TYPE.put("py", TYPE_PYTHON);
         EXT2TYPE.put("rb", TYPE_RUBY);
         EXT2TYPE.put("rdf", TYPE_XML);
         EXT2TYPE.put("resx", TYPE_XML);
+        EXT2TYPE.put("rst", TYPE_RST);
         EXT2TYPE.put("scala", TYPE_SCALA);
         EXT2TYPE.put("sh", TYPE_SH);
         EXT2TYPE.put("shfbproj", TYPE_XML);
@@ -196,6 +212,15 @@ public abstract class AbstractLicenseAppender {
         EXT2TYPE.put("xsl", TYPE_XML);
         EXT2TYPE.put("yaml", TYPE_YAML);
         EXT2TYPE.put("yml", TYPE_YAML);
+
+        // TODO: these should be loaded in via some kind of config file
+        EXACT_FILENAME_MATCH.put("Jenkinsfile", TYPE_GROOVY);
+        EXACT_FILENAME_MATCH.put("doxyfile", TYPE_XML);
+        EXACT_FILENAME_MATCH.put("coverage", TYPE_PYTHON);
+        EXACT_FILENAME_MATCH.put("stress", TYPE_SH);
+        EXACT_FILENAME_MATCH.put(".snyk", TYPE_SH);
+
+        IGNORE.add("install-jdk.sh");
     }
 
     private boolean isForced;
@@ -364,6 +389,14 @@ public abstract class AbstractLicenseAppender {
      * TODO use existing mechanism to detect the type of a file and record it in the report output, thus we will not need this duplication here.
      */
     protected int getType(File document) {
+        if (IGNORE.contains(document.getName())) {
+            return TYPE_UNKNOWN;
+        }
+
+        if (EXACT_FILENAME_MATCH.containsKey(document.getName())) {
+            return EXACT_FILENAME_MATCH.get(document.getName());
+        }
+
         String path = document.getPath();
         int lastDot = path.lastIndexOf(DOT);
         if (lastDot >= 0 && lastDot < path.length() - 1) {
@@ -405,6 +438,10 @@ public abstract class AbstractLicenseAppender {
             return "/*" + LINE_SEP;
         } else if (isFamilySGML(type)) {
             return "<!--" + LINE_SEP;
+        } else if (isFamilyPS(type)) {
+            return "<#" + LINE_SEP;
+        } else if (isFamilyRST(type)) {
+            return ".." + LINE_SEP;
         }
         return "";
     }
@@ -422,6 +459,8 @@ public abstract class AbstractLicenseAppender {
             return " */" + LINE_SEP;
         } else if (isFamilySGML(type)) {
             return "-->" + LINE_SEP;
+        } else if (isFamilyPS(type)) {
+            return " #>" + LINE_SEP;
         }
         return "";
     }
@@ -448,6 +487,10 @@ public abstract class AbstractLicenseAppender {
             return "rem " + content + LINE_SEP;
         } else if (isFamilyVelocity(type)) {
             return "## " + content + LINE_SEP;
+        } else if (isFamilyPS(type)) {
+            return " # " + content + LINE_SEP;
+        } else if (isFamilyRST(type)) {
+            return "   " + content + LINE_SEP;
         }
         return "";
     }
@@ -474,6 +517,14 @@ public abstract class AbstractLicenseAppender {
 
     private static boolean isFamilyVelocity(int type) {
         return isIn(FAMILY_VELOCITY, type);
+    }
+
+    private static boolean isFamilyPS(int type) {
+        return isIn(FAMILY_PS, type);
+    }
+
+    private static boolean isFamilyRST(int type) {
+        return isIn(FAMILY_RST, type);
     }
 
     private static boolean expectsHashPling(int type) {
