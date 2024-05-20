@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.rat.tools;
 
 import static java.lang.String.format;
@@ -26,30 +25,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import org.apache.commons.cli.Option;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.LineIterator;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.rat.OptionCollection;
-import org.apache.rat.utils.CasedString;
-import org.apache.rat.utils.CasedString.StringCase;
-
-/**
- * A simple tool to convert CLI options to Maven Mojo base class
- */
-public final class MavenGenerator {
-
-    /** A mapping of external name to internal name if not standard */
-    private static final Map<String, String> RENAME_MAP = new HashMap<>();
 
     static {
         RENAME_MAP.put("licenses", "config");
@@ -107,11 +82,6 @@ public final class MavenGenerator {
             while (iter.hasNext()) {
                 String line = iter.next();
                 switch (line.trim()) {
-                    case "${static}":
-                        for (Map.Entry<String, String> entry : RENAME_MAP.entrySet()) {
-                            writer.append(format("        xlateName.put(\"%s\", \"%s\");%n", entry.getKey(), entry.getValue()));
-                        }
-                        break;
                     case "${methods}":
                         writeMethods(writer, options);
                         break;
@@ -160,11 +130,4 @@ public final class MavenGenerator {
                     option.getName(), option.keyValue());
         }
     }
-
-    static String createName(final Option option) {
-        String name = option.getLongOpt();
-        name = StringUtils.defaultIfEmpty(RENAME_MAP.get(name), name).toLowerCase(Locale.ROOT);
-        return new CasedString(CasedString.StringCase.KEBAB, name).toCase(StringCase.CAMEL);
-    }
-
 }
