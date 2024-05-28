@@ -18,7 +18,32 @@
  */
 package org.apache.rat;
 
-import static java.lang.String.format;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Converter;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.DeprecatedAttributes;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionGroup;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.FalseFileFilter;
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.NameFileFilter;
+import org.apache.commons.io.filefilter.OrFileFilter;
+import org.apache.commons.io.filefilter.RegexFileFilter;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.commons.io.function.IOSupplier;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.rat.api.Document;
+import org.apache.rat.config.AddLicenseHeaders;
+import org.apache.rat.document.impl.FileDocument;
+import org.apache.rat.license.LicenseSetFactory;
+import org.apache.rat.report.IReportable;
+import org.apache.rat.utils.DefaultLog;
+import org.apache.rat.utils.Log;
+import org.apache.rat.walker.ArchiveWalker;
+import org.apache.rat.walker.DirectoryWalker;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,49 +65,16 @@ import java.util.function.Supplier;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Converter;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.DeprecatedAttributes;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionGroup;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FalseFileFilter;
-import org.apache.commons.io.filefilter.IOFileFilter;
-import org.apache.commons.io.filefilter.NameFileFilter;
-import org.apache.commons.io.filefilter.NotFileFilter;
-import org.apache.commons.io.filefilter.OrFileFilter;
-import org.apache.commons.io.filefilter.RegexFileFilter;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.commons.io.function.IOSupplier;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.rat.api.Document;
-import org.apache.rat.config.AddLicenseHeaders;
-import org.apache.rat.document.impl.FileDocument;
-import org.apache.rat.license.LicenseSetFactory;
-import org.apache.rat.report.IReportable;
-import org.apache.rat.utils.DefaultLog;
-import org.apache.rat.utils.Log;
-import org.apache.rat.walker.ArchiveWalker;
-import org.apache.rat.walker.DirectoryWalker;
+import static java.lang.String.format;
 
 /**
  * The collection of standard options for the CLI as well as utility methods to manage them and methods to create the
  * ReportConfiguration from the options and an array of arguments.
  */
-public final class OptionCollection {
-
-    private OptionCollection() {
-        // do not instantiate
-    }
+public class OptionCollection {
 
     /*
                     START OF OPTION LIST
-
-    Options must have a longOption defined if they are to be used in client processing.  Deprecated short options may
-    be listed by themselves.
      */
 
     /**
@@ -121,8 +113,7 @@ public final class OptionCollection {
      */
     public static final Option STYLESHEET_CLI = Option.builder("s").longOpt("stylesheet").hasArg().argName("StyleSheet")
             .desc("XSLT stylesheet to use when creating the report.  Not compatible with -x. "
-                    + "Either an external xsl file may be specified or one of the internal named sheets: plain-rat (default), " +
-                    "missing-headers, or unapproved-licenses")
+                    + "Either an external xsl file may be specified or one of the internal named sheets: plain-rat (default), missing-headers, or unapproved-licenses")
             .build();
     /**
      * Produce help
@@ -141,14 +132,12 @@ public final class OptionCollection {
      * Do not use the default files.
      * @since 0.16
      */
-    public static final Option NO_DEFAULTS = new Option(null, "no-default-licenses", false,
-            "Ignore default configuration. By default all approved default licenses are used");
+    public static final Option NO_DEFAULTS = new Option(null, "no-default-licenses", false, "Ignore default configuration. By default all approved default licenses are used");
 
     /**
      * Scan hidden directories.
      */
-    public static final Option SCAN_HIDDEN_DIRECTORIES = new Option(null, "scan-hidden-directories", false,
-            "Scan hidden directories");
+    public static final Option SCAN_HIDDEN_DIRECTORIES = new Option(null, "scan-hidden-directories", false, "Scan hidden directories");
 
     /**
      * List the licenses that were used for the run.
@@ -256,24 +245,19 @@ public final class OptionCollection {
      * The enumeration of system defined stylesheets.
      */
     private enum StyleSheets {
-        /** The plain style sheet.  The default. */
         PLAIN("plain-rat", "The default style"),
-        /** The missing header report style sheet */
         MISSING_HEADERS("missing-headers", "Produces a report of files that are missing headers"),
-        /** The unapproved licenses report */
         UNAPPROVED_LICENSES("unapproved-licenses", "Produces a report of the files with unapproved licenses");
-        /** The name of the style sheet.  Must map to bundled resource xslt file */
-        private final String name;
-        /** The descriptoin of the style sheet */
+        private final String arg;
         private final String desc;
 
-        StyleSheets(final String name, final String description) {
-            this.name = name;
+        StyleSheets(final String arg, final String description) {
+            this.arg = arg;
             this.desc = description;
         }
 
         public String arg() {
-            return name;
+            return arg;
         }
 
         public String desc() {
@@ -356,6 +340,7 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(LOG_LEVEL)) {
+            DeprecationReporter.logDeprecated(log, LOG_LEVEL);
             if (log instanceof DefaultLog) {
                 DefaultLog dLog = (DefaultLog) log;
                 try {
@@ -364,7 +349,7 @@ public final class OptionCollection {
                     logParseException(log, e, LOG_LEVEL, cl, dLog.getLevel());
                 }
             } else {
-                log.error("log was not a DefaultLog instance. LogLevel not set.");
+                log.error("log was not a DefaultLog instance.  LogLevel not set.");
             }
         }
         if (cl.hasOption(HELP)) {
@@ -372,40 +357,29 @@ public final class OptionCollection {
             return null;
         }
 
-        String[] clArgs = cl.getOptionValues(DIR);
-        if (clArgs == null) {
-            // getArgs() can not be null.
-            clArgs = cl.getArgs();
-        }
+        String[] clArgs;
         if (!noArgs) {
-            if (clArgs.length != 1) {
+            clArgs = cl.getArgs();
+            if (clArgs == null || clArgs.length != 1) {
                 helpCmd.accept(opts);
                 return null;
             }
-        }
-        if (clArgs.length == 0) {
+        } else {
             clArgs = new String[]{null};
         }
         return createConfiguration(log, clArgs[0], cl);
     }
 
-    /**
-     * Logs a ParseException as a warning.
-     * @param log the Log to write to
-     * @param exception the parse exception to log
-     * @param opt the option being processed
-     * @param cl the command line being processed
-     * @param dflt The default value the option is being set to.
-     */
-    private static void logParseException(final Log log, final ParseException exception, final Option opt, final CommandLine cl, final Object dflt) {
+
+    private static void logParseException(final Log log, final ParseException e, final Option opt, final CommandLine cl, final Object dflt) {
         log.warn(format("Invalid %s specified: %s ", opt.getOpt(), cl.getOptionValue(opt)));
         log.warn(format("%s set to: %s", opt.getOpt(), dflt));
-        log.debug(exception);
+        log.debug(e);
     }
 
     /**
      * Create the report configuration.
-     * Note: this method is package private for testing.  You probably want one of the {@code ParseCommands} methods.
+     * Note: this method is package private for testing.  You probably want one of the {@code PprseCommands} methods.
      * @param log The log to log errors to.
      * @param baseDirectory the base directory where files will be found.
      * @param cl the parsed command line.
@@ -417,11 +391,17 @@ public final class OptionCollection {
     static ReportConfiguration createConfiguration(final Log log, final String baseDirectory, final CommandLine cl) throws IOException {
         final ReportConfiguration configuration = new ReportConfiguration(log);
 
+        if (cl.hasOption(DIR)) {
+            DeprecationReporter.logDeprecated(log, DIR);
+        }
+
         if (cl.hasOption(DRY_RUN)) {
+            DeprecationReporter.logDeprecated(log, DRY_RUN);
             configuration.setDryRun(cl.hasOption(DRY_RUN));
         }
 
         if (cl.hasOption(LIST_FAMILIES)) {
+            DeprecationReporter.logDeprecated(log, LIST_FAMILIES);
             try {
                 configuration.listFamilies(cl.getParsedOptionValue(LIST_FAMILIES));
             } catch (ParseException e) {
@@ -430,6 +410,7 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(LIST_LICENSES)) {
+            DeprecationReporter.logDeprecated(log, LIST_LICENSES);
             try {
                 configuration.listLicenses(cl.getParsedOptionValue(LIST_LICENSES));
             } catch (ParseException e) {
@@ -438,6 +419,7 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(ARCHIVE)) {
+            DeprecationReporter.logDeprecated(log, ARCHIVE);
             try {
                 configuration.setArchiveProcessing(cl.getParsedOptionValue(ARCHIVE));
             } catch (ParseException e) {
@@ -446,6 +428,7 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(STANDARD)) {
+            DeprecationReporter.logDeprecated(log, STANDARD);
             try {
                 configuration.setStandardProcessing(cl.getParsedOptionValue(STANDARD));
             } catch (ParseException e) {
@@ -454,10 +437,11 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(OUT)) {
+            DeprecationReporter.logDeprecated(log, OUT);
             try {
                 File f = cl.getParsedOptionValue(OUT);
                 if (f.getParentFile().mkdirs() && !f.isDirectory()) {
-                    log.error("Could not create report parent directory " + f);
+                    log.error( "Could not create report parent directory " + f);
                 }
                 configuration.setOut(f);
             } catch (ParseException e) {
@@ -466,23 +450,32 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(SCAN_HIDDEN_DIRECTORIES)) {
+            DeprecationReporter.logDeprecated(log, SCAN_HIDDEN_DIRECTORIES);
             configuration.setDirectoriesToIgnore(FalseFileFilter.FALSE);
         }
 
         if (ADD.getSelected() != null) {
-            cl.hasOption(ADD.getSelected()); // causes reporting of deprecated -a flag TODO remove this when -a is removed.
+            // @TODO remove this block when Commons-cli version 1.7.1 or higher is used
+            Arrays.stream(cl.getOptions()).filter(o -> o.getOpt().equals("a")).forEach(o -> cl.hasOption(o.getOpt()));
+            if (cl.hasOption(FORCE)) {
+                DeprecationReporter.logDeprecated(log, FORCE);
+            }
+            if (cl.hasOption(COPYRIGHT)) {
+                DeprecationReporter.logDeprecated(log, COPYRIGHT);
+            }
+            // remove that block ---^
             configuration.setAddLicenseHeaders(cl.hasOption(FORCE) ? AddLicenseHeaders.FORCED : AddLicenseHeaders.TRUE);
             configuration.setCopyrightMessage(cl.getOptionValue(COPYRIGHT));
         }
 
-        // TODO when include/exclude processing is updated check calling methods to ensure that all specified
-        // directories are handled in the list of directories.
         if (cl.hasOption(EXCLUDE_CLI)) {
+            DeprecationReporter.logDeprecated(log, EXCLUDE_CLI);
             String[] excludes = cl.getOptionValues(EXCLUDE_CLI);
             if (excludes != null) {
                 parseExclusions(log, Arrays.asList(excludes)).ifPresent(configuration::setFilesToIgnore);
             }
         } else if (cl.hasOption(EXCLUDE_FILE_CLI)) {
+            DeprecationReporter.logDeprecated(log, EXCLUDE_FILE_CLI);
             String excludeFileName = cl.getOptionValue(EXCLUDE_FILE_CLI);
             if (excludeFileName != null) {
                 parseExclusions(log, FileUtils.readLines(new File(excludeFileName), StandardCharsets.UTF_8))
@@ -491,10 +484,12 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(XML)) {
+            DeprecationReporter.logDeprecated(log, XML);
             configuration.setStyleReport(false);
         } else {
             configuration.setStyleReport(true);
             if (cl.hasOption(STYLESHEET_CLI)) {
+                DeprecationReporter.logDeprecated(log, STYLESHEET_CLI);
                 String[] style = cl.getOptionValues(STYLESHEET_CLI);
                 if (style.length != 1) {
                     log.error("Please specify a single stylesheet");
@@ -511,9 +506,11 @@ public final class OptionCollection {
 
         Defaults.Builder defaultBuilder = Defaults.builder();
         if (cl.hasOption(NO_DEFAULTS)) {
+            DeprecationReporter.logDeprecated(log, NO_DEFAULTS);
             defaultBuilder.noDefault();
         }
         if (cl.hasOption(LICENSES)) {
+            DeprecationReporter.logDeprecated(log, LICENSES);
             for (String fn : cl.getOptionValues(LICENSES)) {
                 defaultBuilder.add(fn);
             }
@@ -565,7 +562,6 @@ public final class OptionCollection {
 
     /**
      * Create an {@code Options} object from the list of defined Options.
-     * Mutually exclusive options must be listed in an OptionGroup.
      * @return the Options comprised of the Options defined in this class.
      */
     public static Options buildOptions() {
