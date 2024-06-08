@@ -182,6 +182,7 @@ public class OptionCollectionTest {
         if (expectedPatterns.isEmpty()) {
             assertThat(filter).isEmpty();
         } else {
+            assertThat(filter).isNotEmpty();
             assertInstanceOf(OrFileFilter.class, filter.get());
             String result = filter.toString();
             for (IOFileFilter expectedFilter : expectedPatterns) {
