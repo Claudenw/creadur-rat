@@ -18,6 +18,8 @@
  */
 package org.apache.rat;
 
+import static java.lang.String.format;
+
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Map;
@@ -28,20 +30,18 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.text.WordUtils;
 import org.apache.rat.utils.DefaultLog;
 
-import static java.lang.String.format;
-
 /**
  * The CLI based configuration object for report generation.
  */
 public final class Report {
 
+    /** The width of the help report in chars. */
     private static final int HELP_WIDTH = 120;
+    /** The number of chars to indent output with */
     private static final int HELP_PADDING = 5;
 
-    /*
-    If there are changes to Options the example output should be regenerated and placed in
-    apache-rat/src/site/apt/index.apt.vm
-    Be careful of formatting as some editors get confused.
+    /**
+     * An array of notes to go at the bottom of the help output
      */
     private static final String[] NOTES = {
             "Rat highlights possible issues.",
@@ -74,16 +74,40 @@ public final class Report {
         printUsage(new PrintWriter(System.out), opts);
     }
 
+    /**
+     * Create a padding.
+     * @param len The length of the padding in characters.
+     * @return a string with len blanks.
+     */
     private static String createPadding(final int len) {
         char[] padding = new char[len];
         Arrays.fill(padding, ' ');
         return new String(padding);
     }
 
+    /**
+     * Create a section header for the output.
+     * @param txt the text to put in the header.
+     * @return the Header string.
+     */
     static String header(final String txt) {
         return String.format("%n====== %s ======%n", WordUtils.capitalizeFully(txt));
     }
 
+    /** Function to format deprecated display */
+    private static final Function<Option, String> DEPRECATED_MSG = o -> {
+        StringBuilder sb = new StringBuilder("[").append(o.getDeprecated().toString()).append("]");
+        if (o.getDescription() != null) {
+            sb.append(" ").append(o.getDescription());
+        }
+        return sb.toString();
+    };
+
+    /**
+     * Print the usage to the specific PrintWriter.
+     * @param writer the PrintWriter to output to.
+     * @param opts The defined options.
+     */
     static void printUsage(final PrintWriter writer, final Options opts) {
         HelpFormatter helpFormatter = new HelpFormatter.Builder().get();
         helpFormatter.setWidth(HELP_WIDTH);
