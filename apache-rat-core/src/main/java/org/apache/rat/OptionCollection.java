@@ -28,6 +28,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -155,7 +156,7 @@ public final class OptionCollection {
      * @since 0.16
      */
     public static final Option LIST_LICENSES = Option.builder().longOpt("list-licenses").hasArg().argName("LicenseFilter")
-            .desc("List the defined licenses (default is NONE). Valid options are: " + asString(LicenseSetFactory.LicenseFilter.values()))
+            .desc("List the defined licenses (default is NONE).")
             .converter(s -> LicenseSetFactory.LicenseFilter.valueOf(s.toUpperCase()))
             .build();
 
@@ -164,7 +165,7 @@ public final class OptionCollection {
      * @since 0.16
      */
     public static final Option LIST_FAMILIES = Option.builder().longOpt("list-families").hasArg().argName("LicenseFilter")
-            .desc("List the defined license families (default is NONE). Valid options are: " + asString(LicenseSetFactory.LicenseFilter.values()))
+            .desc("List the defined license families (default is NONE).")
             .converter(s -> LicenseSetFactory.LicenseFilter.valueOf(s.toUpperCase()))
             .build();
 
@@ -210,26 +211,22 @@ public final class OptionCollection {
             .build();
 
 
-    /** TODO rework when commons-cli 1.7.1 or higher is available. */
-    static final DeprecatedAttributes DIR_ATTRIBUTES = DeprecatedAttributes.builder().setForRemoval(true).setSince("0.17")
-            .setDescription("Use '--'").get();
+
     /**
      * Ths option to signal the end of an argument list and the start of the directory/archive arguments.
      */
     public static final Option DIR = Option.builder().option("d").longOpt("dir").hasArg()
-            .desc(format("[%s] %s", DIR_ATTRIBUTES, "Used to indicate end of list when using --exclude.")).argName("DirOrArchive")
-            .deprecated(DIR_ATTRIBUTES).build();
+            .desc("Used to indicate end of list when using --exclude.").argName("DirOrArchive")
+            .deprecated(DeprecatedAttributes.builder().setForRemoval(true).setSince("0.17")
+                    .setDescription("Use '--'").get()).build();
 
-    /** TODO rework when Commons-CLI version 1.7.1 or higher is available. */
-    private static final DeprecatedAttributes ADD_ATTRIBUTES = DeprecatedAttributes.builder().setForRemoval(true).setSince("0.17")
-            .setDescription("Use '-A' or '--addLicense' instead.").get();
     /**
      * Option to signal that license text should be added to the files.
      */
     static final OptionGroup ADD = new OptionGroup()
             .addOption(Option.builder("a").hasArg(false)
-                    .desc(format("[%s]", ADD_ATTRIBUTES))
-                    .deprecated(ADD_ATTRIBUTES)
+                    .deprecated(DeprecatedAttributes.builder().setForRemoval(true).setSince("0.17")
+                            .setDescription("Use '-A' or '--addLicense' instead.").get())
                     .build())
             .addOption(ADD_LICENSE);
 
@@ -238,7 +235,7 @@ public final class OptionCollection {
      */
     public static final Option COPYRIGHT = Option.builder().option("c").longOpt("copyright").hasArg()
             .desc(format("The copyright message to use in the license headers, usually in the form of \"Copyright 2008 Foo\".  Only valid with --%s",
-                    ADD.getOptions().stream().filter(o -> !o.isDeprecated()).findAny().get().getLongOpt()))
+                    ADD_LICENSE.getLongOpt()))
             .build();
 
     /**
@@ -246,7 +243,7 @@ public final class OptionCollection {
      */
     public static final Option FORCE = new Option("f", "force", false,
             format("Forces any changes in files to be written directly to the source files (i.e. new files are not created).  Only valid with --%s",
-                    ADD.getOptions().stream().filter(o -> !o.isDeprecated()).findAny().get().getLongOpt()));
+                    ADD_LICENSE.getLongOpt()));
 
 
     /*
@@ -357,7 +354,6 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(LOG_LEVEL)) {
-            DeprecationReporter.logDeprecated(log, LOG_LEVEL);
             if (log instanceof DefaultLog) {
                 DefaultLog dLog = (DefaultLog) log;
                 try {
@@ -374,15 +370,20 @@ public final class OptionCollection {
             return null;
         }
 
-        String[] clArgs;
-        if (!noArgs) {
-            clArgs = cl.getArgs();
-            if (clArgs == null || clArgs.length != 1) {
-                helpCmd.accept(opts);
-                return null;
-            }
-        } else {
-            clArgs = new String[]{null};
+        // DIR or end of command line can provide args.
+        String[] clArgs = {null};
+        List<String> lst = new ArrayList<>();
+        String dirValue = cl.getOptionValue(DIR);
+        if (dirValue != null) {
+            lst.add(dirValue);
+        }
+        lst.addAll(Arrays.asList(cl.getArgs()));
+        if (!noArgs && lst.size() != 1) {
+            helpCmd.accept(opts);
+            return null;
+        }
+        if (!lst.isEmpty()) {
+            clArgs[0] = lst.get(0);
         }
         return createConfiguration(log, clArgs[0], cl);
     }
@@ -415,17 +416,11 @@ public final class OptionCollection {
     static ReportConfiguration createConfiguration(final Log log, final String baseDirectory, final CommandLine cl) throws IOException {
         final ReportConfiguration configuration = new ReportConfiguration(log);
 
-        if (cl.hasOption(DIR)) {
-            DeprecationReporter.logDeprecated(log, DIR);
-        }
-
         if (cl.hasOption(DRY_RUN)) {
-            DeprecationReporter.logDeprecated(log, DRY_RUN);
             configuration.setDryRun(cl.hasOption(DRY_RUN));
         }
 
         if (cl.hasOption(LIST_FAMILIES)) {
-            DeprecationReporter.logDeprecated(log, LIST_FAMILIES);
             try {
                 configuration.listFamilies(cl.getParsedOptionValue(LIST_FAMILIES));
             } catch (ParseException e) {
@@ -434,7 +429,6 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(LIST_LICENSES)) {
-            DeprecationReporter.logDeprecated(log, LIST_LICENSES);
             try {
                 configuration.listLicenses(cl.getParsedOptionValue(LIST_LICENSES));
             } catch (ParseException e) {
@@ -443,7 +437,6 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(ARCHIVE)) {
-            DeprecationReporter.logDeprecated(log, ARCHIVE);
             try {
                 configuration.setArchiveProcessing(cl.getParsedOptionValue(ARCHIVE));
             } catch (ParseException e) {
@@ -452,7 +445,6 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(STANDARD)) {
-            DeprecationReporter.logDeprecated(log, STANDARD);
             try {
                 configuration.setStandardProcessing(cl.getParsedOptionValue(STANDARD));
             } catch (ParseException e) {
@@ -461,7 +453,6 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(OUT)) {
-            DeprecationReporter.logDeprecated(log, OUT);
             try {
                 File f = cl.getParsedOptionValue(OUT);
                 if (f.getParentFile().mkdirs() && !f.isDirectory()) {
@@ -474,32 +465,21 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(SCAN_HIDDEN_DIRECTORIES)) {
-            DeprecationReporter.logDeprecated(log, SCAN_HIDDEN_DIRECTORIES);
             configuration.setDirectoriesToIgnore(FalseFileFilter.FALSE);
         }
 
         if (ADD.getSelected() != null) {
-            // @TODO remove this block when Commons-cli version 1.7.1 or higher is used
-            Arrays.stream(cl.getOptions()).filter(o -> o.getOpt().equals("a")).forEach(o -> cl.hasOption(o.getOpt()));
-            if (cl.hasOption(FORCE)) {
-                DeprecationReporter.logDeprecated(log, FORCE);
-            }
-            if (cl.hasOption(COPYRIGHT)) {
-                DeprecationReporter.logDeprecated(log, COPYRIGHT);
-            }
-            // remove that block ---^
+            cl.hasOption(ADD.getSelected());
             configuration.setAddLicenseHeaders(cl.hasOption(FORCE) ? AddLicenseHeaders.FORCED : AddLicenseHeaders.TRUE);
             configuration.setCopyrightMessage(cl.getOptionValue(COPYRIGHT));
         }
 
         if (cl.hasOption(EXCLUDE_CLI)) {
-            DeprecationReporter.logDeprecated(log, EXCLUDE_CLI);
             String[] excludes = cl.getOptionValues(EXCLUDE_CLI);
             if (excludes != null) {
                 parseExclusions(log, Arrays.asList(excludes)).ifPresent(configuration::setFilesToIgnore);
             }
         } else if (cl.hasOption(EXCLUDE_FILE_CLI)) {
-            DeprecationReporter.logDeprecated(log, EXCLUDE_FILE_CLI);
             String excludeFileName = cl.getOptionValue(EXCLUDE_FILE_CLI);
             if (excludeFileName != null) {
                 parseExclusions(log, FileUtils.readLines(new File(excludeFileName), StandardCharsets.UTF_8))
@@ -508,12 +488,10 @@ public final class OptionCollection {
         }
 
         if (cl.hasOption(XML)) {
-            DeprecationReporter.logDeprecated(log, XML);
             configuration.setStyleReport(false);
         } else {
             configuration.setStyleReport(true);
             if (cl.hasOption(STYLESHEET_CLI)) {
-                DeprecationReporter.logDeprecated(log, STYLESHEET_CLI);
                 String[] style = cl.getOptionValues(STYLESHEET_CLI);
                 if (style.length != 1) {
                     log.error("Please specify a single stylesheet");
@@ -530,11 +508,9 @@ public final class OptionCollection {
 
         Defaults.Builder defaultBuilder = Defaults.builder();
         if (cl.hasOption(NO_DEFAULTS)) {
-            DeprecationReporter.logDeprecated(log, NO_DEFAULTS);
             defaultBuilder.noDefault();
         }
         if (cl.hasOption(LICENSES)) {
-            DeprecationReporter.logDeprecated(log, LICENSES);
             for (String fn : cl.getOptionValues(LICENSES)) {
                 defaultBuilder.add(fn);
             }
