@@ -16,44 +16,8 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  */
-package org.apache.rat;
 
 /**
- * A list of methods that an OptionsProvider in a test case must support.
- * Use of this interface can ensures consistent testing across the UIs.  Each method
- * tests an Option from OptionCollection that must be implemented in the UI.
- * Each method in this interface tests an Option in OptionCollection.
+ * Helper classes for command line processing.
  */
-public interface IOptionsProvider {
-    void addLicenseTest();
-
-    void archiveTest();
-
-    void standardTest();
-
-    void copyrightTest();
-
-    void dryRunTest();
-
-    void excludeCliTest();
-
-    void excludeCliFileTest();
-
-    void forceTest();
-
-    void licensesTest();
-
-    void listLicensesTest();
-
-    void listFamiliesTest();
-
-    void noDefaultsTest();
-
-    void outTest();
-
-    void scanHiddenDirectoriesTest();
-
-    void styleSheetTest();
-
-    void xmlTest();
-}
+package org.apache.rat.commandline;

@@ -37,6 +37,7 @@ import org.apache.rat.ImplementationException;
 import org.apache.rat.OptionCollection;
 import org.apache.rat.ReportConfiguration;
 import org.apache.rat.Reporter;
+import org.apache.rat.commandline.OutputArgs;
 import org.apache.rat.license.LicenseSetFactory;
 import org.apache.rat.utils.DefaultLog;
 import org.apache.rat.utils.Log;
@@ -316,7 +317,7 @@ public class Report extends BaseAntTask {
             final ReportConfiguration configuration = OptionCollection.parseCommands(args().toArray(new String[0]),
                     o -> DefaultLog.getInstance().warn("Help option not supported"),
                     true);
-            if (!args().contains(asKey(OptionCollection.OUT))) {
+            if (!args().contains(asKey(OutputArgs.OUT))) {
                 configuration.setOut(() -> new LogOutputStream(this, Project.MSG_INFO));
             }
             configuration.setReportable(new ResourceCollectionContainer(nestedResources));
