@@ -40,6 +40,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rat.OptionCollection;
+import org.apache.rat.commandline.InputArgs;
 import org.apache.rat.utils.CasedString;
 import org.apache.rat.utils.CasedString.StringCase;
 
@@ -59,7 +60,7 @@ public final class MavenGenerator {
     /**
      * List of CLI Options that are not supported by Maven.
      */
-    private static final List<Option> MAVEN_FILTER_LIST = Arrays.asList(OptionCollection.HELP, OptionCollection.DIR);
+    private static final List<Option> MAVEN_FILTER_LIST = Arrays.asList(OptionCollection.HELP, InputArgs.DIR);
 
     /**
      * Filter to remove Options not supported by Maven.
