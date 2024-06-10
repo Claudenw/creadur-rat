@@ -22,7 +22,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.IOFileFilter;
@@ -63,7 +62,6 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -245,45 +243,45 @@ public class OptionCollectionTest {
             String[] args = {"--input-exclude", "*.foo", "[A-Z]\\.bar", "justbaz"};
         }
 
-        @Override
-        protected void licenseFamiliesFileTest() {
-            fail("not implemented");
-        }
-
-        @Override
-        protected void licenseFamiliesTest() {
-            fail("not implemented");
-        }
-
-        @Override
-        protected void licensesApprovedFileTest() {
-            fail("not implemented");
-        }
-
-        @Override
-        protected void licensesApprovedTest() {
-            fail("not implemented");
-        }
-
-        @Override
-        protected void licensesRemoveApprovedFileTest() {
-            fail("not implemented");
-        }
-
-        @Override
-        protected void licensesRemoveApprovedTest() {
-            fail("not implemented");
-        }
-
-        @Override
-        protected void licensesRemoveFamiliesFileTest() {
-            fail("not implemented");
-        }
-
-        @Override
-        protected void licensesRemoveFamiliesTest() {
-            fail("not implemented");
-        }
+//        @Override
+//        protected void licenseFamiliesFileTest() {
+//            fail("not implemented");
+//        }
+//
+//        @Override
+//        protected void licenseFamiliesTest() {
+//            fail("not implemented");
+//        }
+//
+//        @Override
+//        protected void licensesApprovedFileTest() {
+//            fail("not implemented");
+//        }
+//
+//        @Override
+//        protected void licensesApprovedTest() {
+//            fail("not implemented");
+//        }
+//
+//        @Override
+//        protected void licensesRemoveApprovedFileTest() {
+//            fail("not implemented");
+//        }
+//
+//        @Override
+//        protected void licensesRemoveApprovedTest() {
+//            fail("not implemented");
+//        }
+//
+//        @Override
+//        protected void licensesRemoveFamiliesFileTest() {
+//            fail("not implemented");
+//        }
+//
+//        @Override
+//        protected void licensesRemoveFamiliesTest() {
+//            fail("not implemented");
+//        }
 
         /**
          * Constructor.  sets the baseDir and loads the testMap.
