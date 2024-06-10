@@ -28,9 +28,9 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.rat.Defaults;
-import org.apache.rat.OptionCollection;
 import org.apache.rat.ReportConfiguration;
 import org.apache.rat.Reporter;
+import org.apache.rat.commandline.OutputArgs;
 import org.apache.rat.license.LicenseSetFactory.LicenseFilter;
 import org.apache.rat.report.claim.ClaimStatistic;
 
@@ -156,7 +156,7 @@ public class RatCheckMojo extends AbstractRatMojo {
             return;
         }
 
-        String outKey = "--" + OptionCollection.OUT.getLongOpt();
+        String outKey = "--" + OutputArgs.OUT.getLongOpt();
         if (args.get(outKey) == null) {
             setArg(outKey, defaultReportFile.getPath());
         }
@@ -199,7 +199,7 @@ public class RatCheckMojo extends AbstractRatMojo {
                 }
             }
 
-            final String seeReport = " See RAT report in: " + args.get("--" + OptionCollection.OUT.getLongOpt());
+            final String seeReport = " See RAT report in: " + args.get("--" + OutputArgs.OUT.getLongOpt());
             if (!ignoreErrors) {
                 throw new RatCheckException("Too many files with unapproved license: "
                         + stats.getCounter(ClaimStatistic.Counter.UNAPPROVED) + seeReport);

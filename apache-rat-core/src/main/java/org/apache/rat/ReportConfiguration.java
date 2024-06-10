@@ -127,10 +127,6 @@ public class ReportConfiguration {
      */
     private IOSupplier<OutputStream> out;
     /**
-     * {@code true} if the report should be styled.  {@code false} if XML should be produced.
-     */
-    private boolean styleReport;
-    /**
      * The IOSupplier that provides the stylesheet to style the XML output.
      */
     private IOSupplier<InputStream> styleSheet;
@@ -182,7 +178,6 @@ public class ReportConfiguration {
                 .setMsgFormat(s -> String.format("Duplicate License %s (%s) of type %s", s.getName(), s.getId(), s.getLicenseFamily().getFamilyCategory()));
         approvedLicenseCategories = new TreeSet<>();
         removedLicenseCategories = new TreeSet<>();
-        styleReport = true;
         listFamilies = Defaults.LIST_FAMILIES;
         listLicenses = Defaults.LIST_LICENSES;
         dryRun = false;
@@ -393,7 +388,7 @@ public class ReportConfiguration {
     public void setFrom(final Defaults defaults) {
         addLicensesIfNotPresent(defaults.getLicenses(LicenseFilter.ALL));
         addApprovedLicenseCategories(defaults.getLicenseIds(LicenseFilter.APPROVED));
-        if (isStyleReport() && getStyleSheet() == null) {
+        if (getStyleSheet() == null) {
             setStyleSheet(Defaults.getPlainStyleSheet());
         }
     }
@@ -429,22 +424,6 @@ public class ReportConfiguration {
     public void setStyleSheet(final URL styleSheet) {
         Objects.requireNonNull(styleSheet, "styleSheet file should not be null");
         setStyleSheet(styleSheet::openStream);
-    }
-
-    /**
-     * Returns {@code true} if the XML report should be styled.
-     * @return {@code true} if the XML report should be styled.
-     */
-    public boolean isStyleReport() {
-        return styleReport;
-    }
-
-    /**
-     * Specifies that the XML report should or should not be styled.
-     * @param styleReport specifies whether the XML report should be styled.
-     */
-    public void setStyleReport(final boolean styleReport) {
-        this.styleReport = styleReport;
     }
 
     /**
@@ -741,12 +720,6 @@ public class ReportConfiguration {
         }
         if (licenses.isEmpty()) {
             throw new ConfigurationException("You must specify at least one license");
-        }
-        if (styleSheet != null && !isStyleReport()) {
-            logger.accept("Ignoring stylesheet because styling is not selected");
-        }
-        if (styleSheet == null && isStyleReport()) {
-            throw new ConfigurationException("Stylesheet must be specified if report styling is selected");
         }
     }
 
