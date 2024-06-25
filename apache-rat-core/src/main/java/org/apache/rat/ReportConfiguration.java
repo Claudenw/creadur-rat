@@ -176,9 +176,7 @@ public class ReportConfiguration {
                 .setMsgFormat(s -> String.format("Duplicate LicenseFamily category: %s", s.getFamilyCategory()));
         licenses = new ReportingSet<>(LicenseSetFactory.emptyLicenseSet()).setLog(log)
                 .setMsgFormat(s -> String.format("Duplicate License %s (%s) of type %s", s.getName(), s.getId(), s.getLicenseFamily().getFamilyCategory()));
-        approvedLicenseCategories = new TreeSet<>();
-        removedLicenseCategories = new TreeSet<>();
-        styleReport = true;
+        licenseSetFactory = new LicenseSetFactory(families, licenses);
         listFamilies = Defaults.LIST_FAMILIES;
         listLicenses = Defaults.LIST_LICENSES;
         dryRun = false;
@@ -387,9 +385,8 @@ public class ReportConfiguration {
      * @param defaults The defaults to set.
      */
     public void setFrom(final Defaults defaults) {
-        addLicensesIfNotPresent(defaults.getLicenses(LicenseFilter.ALL));
-        addApprovedLicenseCategories(defaults.getLicenseIds(LicenseFilter.APPROVED));
-        if (isStyleReport() && getStyleSheet() == null) {
+        licenseSetFactory.add(defaults.getLicenseSetFactory());
+        if (getStyleSheet() == null) {
             setStyleSheet(Defaults.getPlainStyleSheet());
         }
     }
@@ -721,12 +718,6 @@ public class ReportConfiguration {
         }
         if (licenses.isEmpty()) {
             throw new ConfigurationException("You must specify at least one license");
-        }
-        if (styleSheet != null && !isStyleReport()) {
-            logger.accept("Ignoring stylesheet because styling is not selected");
-        }
-        if (styleSheet == null && isStyleReport()) {
-            throw new ConfigurationException("Stylesheet must be specified if report styling is selected");
         }
     }
 
