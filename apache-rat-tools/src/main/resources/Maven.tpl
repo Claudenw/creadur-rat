@@ -22,7 +22,9 @@ ${package}
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.rat.utils.CasedString;
+import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +42,9 @@ ${class}
      */
     protected final Map<String, List<String>> args = new HashMap<>();
 
-    private final static Map<String,String> xlateName = new HashMap<>();;
+    private final static Map<String,String> xlateName = new HashMap<>();
+
+    private final static List<String> unsupportedArgs = new ArrayList<>();
 
     static {
 ${static}
@@ -49,6 +53,10 @@ ${static}
     public static String createName(String longOpt) {
         String name = xlateName.get(longOpt);
         return name != null ? name : new CasedString(CasedString.StringCase.KEBAB, longOpt).toCase(CasedString.StringCase.CAMEL);
+    }
+
+    public static List<String> unsupportedArgs() {
+        return Collections.unmodifiableList(unsupportedArgs);
     }
 
 ${constructor}
@@ -60,7 +68,7 @@ ${constructor}
     protected List<String> args() {
         List<String> result = new ArrayList<>();
         for (Map.Entry<String, List<String>> entry : args.entrySet()) {
-            result.add(entry.getKey());
+            result.add("--" + entry.getKey());
             result.addAll(entry.getValue().stream().filter(Objects::nonNull).collect(Collectors.toList()));
         }
         return result;
@@ -91,7 +99,7 @@ ${constructor}
      * Add an value to the key in the argument list.
      * If the key does not exist, adds it.
      * @param key the key for the map.
-     * @param value the value to set.
+     * @param value the value to add.
      */
     protected void addArg(String key, String value) {
         List<String> values = args.get(key);
@@ -99,6 +107,24 @@ ${constructor}
             setArg(key, value);
         } else {
             values.add(value);
+        }
+    }
+
+    /**
+     * Add an value to the key in the argument list.
+     * If the key does not exist, adds it.
+     * @param key the key for the map.
+     * @param values the values to add.
+     */
+    protected void addArgs(String key, String[] values) {
+        if (values != null && values.length > 0) {
+            List<String> lst = args.get(key);
+            if (lst == null) {
+                lst = new ArrayList<>();
+                args.put(key, lst);
+            } else {
+                lst.addAll(Arrays.asList(values));
+            }
         }
     }
 

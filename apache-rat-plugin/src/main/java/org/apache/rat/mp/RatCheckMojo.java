@@ -21,7 +21,10 @@ package org.apache.rat.mp;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Objects;
 
+import org.apache.commons.cli.Option;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -30,9 +33,11 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.rat.Defaults;
 import org.apache.rat.ReportConfiguration;
 import org.apache.rat.Reporter;
-import org.apache.rat.commandline.OutputArgs;
+import org.apache.rat.commandline.Arg;
 import org.apache.rat.license.LicenseSetFactory.LicenseFilter;
 import org.apache.rat.report.claim.ClaimStatistic;
+
+import static java.lang.String.format;
 
 /**
  * Run Rat to perform a violation check.
@@ -41,15 +46,15 @@ import org.apache.rat.report.claim.ClaimStatistic;
 public class RatCheckMojo extends AbstractRatMojo {
 
     /** The default output file if no other is specified. */
-    @Parameter(property = "rat.outputFile", defaultValue = "${project.build.directory}/rat.txt")
+    @Parameter(defaultValue = "${project.build.directory}/rat.txt")
     private File defaultReportFile;
 
     /**
      * Where to store the report.
-     * @deprecated use 'out' property.
+     * @deprecated use '-output-file' property.
      */
     @Deprecated
-    @Parameter(property = "rat.outputFile")
+    @Parameter
     public void setReportFile(final File reportFile) {
         if (!reportFile.getParentFile().exists()) {
             if (!reportFile.getParentFile().mkdirs()) {
@@ -67,7 +72,7 @@ public class RatCheckMojo extends AbstractRatMojo {
      * @deprecated use setStyleSheet or xml
      */
     @Deprecated
-    @Parameter(property = "rat.outputStyle")
+    @Parameter
     public void setReportStyle(final String value) {
         if (value.equalsIgnoreCase("xml")) {
             setXml(true);
@@ -87,7 +92,7 @@ public class RatCheckMojo extends AbstractRatMojo {
     /**
      * Whether to add license headers; possible values are {@code forced},
      * {@code true}, and {@code false} (default).
-     * @deprecated use addLicense and forced
+     * @deprecated use --edit-license and --edit-overwrite
      */
     @Deprecated
     @Parameter(property = "rat.addLicenseHeaders")
@@ -111,7 +116,7 @@ public class RatCheckMojo extends AbstractRatMojo {
     /**
      * Copyright message to add to license headers. This option is ignored, unless
      * {@code addLicenseHeaders} is set to {@code true}, or {@code forced}.
-     * @deprecated use copyright
+     * @deprecated use --edit-copyright
      */
     @Deprecated
     @Parameter(property = "rat.copyrightMessage")
@@ -155,11 +160,13 @@ public class RatCheckMojo extends AbstractRatMojo {
             getLog().info("RAT will not execute since it is configured to be skipped via system property 'rat.skip'.");
             return;
         }
+        Arg.reset();
 
-        String outKey = "--" + OutputArgs.OUT.getLongOpt();
-        if (args.get(outKey) == null) {
-            setArg(outKey, defaultReportFile.getPath());
+        if (!Arg.OUTPUT_FILE.group().getOptions().stream().filter(o -> Objects.nonNull(o.getLongOpt()) && Objects.nonNull(args.get(o.getLongOpt())))
+                        .findAny().isPresent()) {
+            setArg("output-file", defaultReportFile.getPath());
         }
+
         ReportConfiguration config = getConfiguration();
 
         logLicenses(config.getLicenses(LicenseFilter.ALL));
@@ -172,6 +179,24 @@ public class RatCheckMojo extends AbstractRatMojo {
         } catch (Exception e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
+    }
+
+    /**
+     * Reads the location of the rat text file from the Mojo.
+     *
+     * @return Value of the "reportFile" property.
+     * @throws MojoFailureException If no output file was specified.
+     */
+    public File getRatTxtFile() throws MojoFailureException {
+        for (Option option : Arg.OUTPUT_FILE.group().getOptions()) {
+            if (option.getLongOpt() != null) {
+                List<String> args = getArg(option.getLongOpt());
+                if (args != null) {
+                    return new File(args.get(0));
+                }
+            }
+        }
+        throw new MojoFailureException("No output file specified");
     }
 
     protected void check() throws MojoFailureException {
@@ -199,13 +224,12 @@ public class RatCheckMojo extends AbstractRatMojo {
                 }
             }
 
-            final String seeReport = " See RAT report in: " + args.get("--" + OutputArgs.OUT.getLongOpt());
             if (!ignoreErrors) {
-                throw new RatCheckException("Too many files with unapproved license: "
-                        + stats.getCounter(ClaimStatistic.Counter.UNAPPROVED) + seeReport);
+                throw new RatCheckException(format("Too many files with unapproved license: %s. See report in: %s",
+                        + stats.getCounter(ClaimStatistic.Counter.UNAPPROVED), getRatTxtFile()));
             }
-            getLog().warn("Rat check: " + stats.getCounter(ClaimStatistic.Counter.UNAPPROVED)
-                    + " files with unapproved licenses." + seeReport);
+            getLog().warn(format("Rat check: %s files with unapproved licenses. See report in: %s",
+                    stats.getCounter(ClaimStatistic.Counter.UNAPPROVED), getRatTxtFile()));
         }
     }
 }

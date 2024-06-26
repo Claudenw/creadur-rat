@@ -37,6 +37,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
+import org.apache.commons.cli.Option;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -56,6 +58,7 @@ import org.apache.rat.Defaults;
 import org.apache.rat.OptionCollection;
 import org.apache.rat.ReportConfiguration;
 import org.apache.rat.analysis.license.DeprecatedConfig;
+import org.apache.rat.commandline.Arg;
 import org.apache.rat.config.SourceCodeManagementSystems;
 import org.apache.rat.configuration.Format;
 import org.apache.rat.configuration.LicenseReader;
@@ -149,6 +152,7 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
     /**
      * Specifies a file, from which to read includes. Basically, an alternative to
      * specifying the includes as a list.
+     * @deprecated use --input-
      */
     @Parameter(property = "rat.includesFile")
     private String includesFile;
@@ -170,46 +174,12 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
     List<String> getExcludes() {
         return excludesList;
     }
-    /**
-     * Specifies files, which are excluded in the report. By default, no files are
-     * excluded.
-     * @param excludes the files to be excluded.
-     * @deprecated use exclude
-     */
-    @Deprecated
-    @Parameter
-    public void setExcludes(final String[] excludes) {
-        this.excludesList.addAll(Arrays.asList(excludes));
-    }
-
-    @Override
-    @Parameter(property = "rat.exclude")
-    public void setExclude(final String exclude) {
-        excludesList.add(exclude);
-    }
 
     /** The list of files to exclude */
     private List<String> excludesFileList = new ArrayList<>();
     // for testing
     List<String> getExcludesFile() {
         return excludesFileList;
-    }
-
-    /**
-     * Specifies a file, from which to read excludes. Basically, an alternative to
-     * specifying the excludes as a list. The excludesFile is assumed to be using
-     * the UFT8 character set.
-     * @deprecated use excludeFile
-     */
-    @Deprecated
-    @Parameter(property = "rat.excludesFile")
-    public void setExcludesFile(final String excludeFile) {
-        excludesFileList.add(excludeFile);
-    }
-
-    @Override
-    public void setExcludeFile(final String file) {
-        excludesFileList.add(file);
     }
 
     /**
@@ -383,6 +353,40 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
         };
     }
 
+    /**
+     * Find the list of arguments for the options in the Arg.
+     * @param arg the Arg to check.
+     * @return A list of the arguments, never {@code null}.
+     */
+    protected List<String> getArgs(Arg arg) {
+        for (Option option : arg.group().getOptions()) {
+            if (option.getLongOpt() != null) {
+                List<String> args = getArg(option.getLongOpt());
+                if (args != null) {
+                    return args;
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Removes the arguments for the options in the Arg.
+     * @param arg The arg to check.
+     */
+    protected void removeArgs(Arg arg) {
+        for (Option option : arg.group().getOptions()) {
+            if (option.getLongOpt() != null) {
+                removeArg(option.getLongOpt());
+            }
+        }
+    }
+
+    /**
+     * Gets the report configuration.
+     * @return the Report configuration.
+     * @throws MojoExecutionException on error.
+     */
     protected ReportConfiguration getConfiguration() throws MojoExecutionException {
         DefaultLog.setInstance(makeLog());
         try {
@@ -395,18 +399,11 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
                 log.debug("End BaseRatMojo Configuration options");
             }
 
-            String key = "--" + createName(OptionCollection.EXCLUDE_CLI.getLongOpt());
-            List<String> argList = args.get(key);
-            if (argList != null) {
-                excludesList.addAll(argList);
-            }
-            args.remove(key);
-            key = "--" + createName(OptionCollection.EXCLUDE_FILE_CLI.getLongOpt());
-            argList = args.get(key);
-            if (argList != null) {
-                excludesFileList.addAll(argList);
-            }
-            args.remove(key);
+            excludesList.addAll(getArgs(Arg.EXCLUDE));
+            removeArgs(Arg.EXCLUDE);
+            excludesFileList.addAll(getArgs(Arg.EXCLUDE_FILE));
+            removeArgs(Arg.EXCLUDE_FILE);
+
             ReportConfiguration config = OptionCollection.parseCommands(args().toArray(new String[0]),
                     o -> getLog().warn("Help option not supported"),
                     true);
@@ -538,7 +535,8 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
         }
     }
 
-    private void setIncludes(final DirectoryScanner ds) throws MojoExecutionException {
+    // package private for testing
+    void setIncludes(final DirectoryScanner ds) throws MojoExecutionException {
         if (includes != null && includes.length > 0 || includesFile != null) {
             final List<String> includeList = new ArrayList<>();
             if (includes != null) {
@@ -583,7 +581,8 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
         return patterns;
     }
 
-    private void setExcludes(final IgnoringDirectoryScanner ds) throws MojoExecutionException {
+    // package private for testing.
+    void setExcludes(final IgnoringDirectoryScanner ds) throws MojoExecutionException {
         final List<IgnoreMatcher> ignoreMatchers = mergeDefaultExclusions();
         if (!excludesList.isEmpty()) {
             getLog().debug("No excludes explicitly specified.");
