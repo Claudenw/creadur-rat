@@ -667,15 +667,6 @@ public class ReportConfiguration {
         licenseIds.forEach(this::removeApprovedLicenseId);
     }
 
-//    /**
-//     * Gets the SortedSet of approved license IDs. <em>Once a license has
-//     * been removed from the approved list it cannot be re-added</em>
-//     * @return the Sorted set of approved license IDs.
-//     */
-//    public SortedSet<String> getApprovedLicenseIds() {
-//        return licenseSetFactory.getLicenseFamilyIds(LicenseFilter.APPROVED);
-//    }
-
     /**
      * Returns the optional license copyright being added if RAT is adding headers.
      * This value is ignored, if no license headers are added.
@@ -738,20 +729,6 @@ public class ReportConfiguration {
             break;
         }
     }
-
-//    /**
-//     * Gets a set Licenses of depending on the {@code filter} if filter is set:
-//     * <ul>
-//     * <li>{@code all} - All licenses will be returned.</li>
-//     * <li>{@code approved} - Only approved licenses will be returned</li>
-//     * <li>{@code none} - No licenses will be returned</li>
-//     * </ul>
-//     * @param filter The license filter.
-//     * @return The set of defined licenses.
-//     */
-//    public SortedSet<ILicense> getLicenses(final LicenseFilter filter) {
-//        return licenseSetFactory.getLicenses(filter);
-//    }
 
     /**
      * Gets a sorted set of ILicenseFamily objects based on {@code filter}. if
