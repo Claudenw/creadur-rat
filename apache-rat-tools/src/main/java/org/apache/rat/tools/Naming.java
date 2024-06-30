@@ -28,6 +28,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rat.OptionCollection;
 
 /**
@@ -55,10 +56,18 @@ public final class Naming {
                 if (option.getLongOpt() != null) {
                     String mavenCell = mavenFilter.test(option) ? mavenFunctionName(option) : "-- not supported --";
                     String antCell = antFilter.test(option) ? antFunctionName(option) : "-- not supported --";
-                    printer.printRecord("--" + option.getLongOpt(), mavenCell, antCell, option.getDescription());
+                    printer.printRecord("--" + option.getLongOpt(), mavenCell, antCell, description(option));
                 }
             }
         }
+    }
+
+    private static String description(final Option option) {
+        StringBuilder sb = new StringBuilder();
+        if (option.isDeprecated()) {
+            sb.append(option.getDeprecated().toString()).append(System.lineSeparator());
+        }
+        return sb.append(StringUtils.defaultIfEmpty(option.getDescription(), "")).toString();
     }
 
     public static String mavenFunctionName(final Option option) {

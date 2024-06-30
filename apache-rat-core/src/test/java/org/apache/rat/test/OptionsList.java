@@ -16,37 +16,35 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  */
-package org.apache.rat;
+package org.apache.rat.test;
 
-
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
-import java.util.TreeSet;
 
-import org.apache.rat.license.ILicense;
-import org.apache.rat.license.LicenseSetFactory.LicenseFilter;
-import org.apache.rat.utils.DefaultLog;
-import org.junit.jupiter.api.Test;
+import org.apache.commons.cli.Option;
+import org.apache.rat.OptionCollection;
 
+public final class OptionsList {
+    private final static Map<String, Option> OPTIONS_MAP = new HashMap<String, Option>();
 
-public class DefaultsTest {
-    private static final String[] FAMILIES = { "BSD-3", "GEN  ", "AL   ", "OASIS", "W3CD ", "W3C  ", "GPL1 ",
-            "GPL2 ", "GPL3 ", "MIT  ", "CDDL1" };
+    static {
+        for (Option option : OptionCollection.buildOptions().getOptions()) {
+            if (option.getLongOpt() != null) {
+                OPTIONS_MAP.put(option.getLongOpt(), option);
+            }
+        }
+    }
 
-    @Test
-    public void defaultConfigTest() {
-        Defaults defaults = Defaults.builder().build(DefaultLog.getInstance());
+    private OptionsList() {
+        // do not instantiate.
+    }
 
-        Set<ILicense> licenses = defaults.getLicenseSetFactory().getLicenses(LicenseFilter.ALL);
+    public static Option getOption(String longOpt) {
+        return OPTIONS_MAP.get(longOpt);
+    }
 
-        Set<String> names = new TreeSet<>();
-        licenses.forEach(x -> names.add(x.getLicenseFamily().getFamilyCategory()));
-        assertEquals(FAMILIES.length, names.size());
-        names.removeAll(Arrays.asList(FAMILIES));
-        assertTrue(names.isEmpty());
+    public static Set<String> getKeys() {
+        return OPTIONS_MAP.keySet();
     }
 }
