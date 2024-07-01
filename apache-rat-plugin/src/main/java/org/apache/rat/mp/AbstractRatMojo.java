@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -38,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.SortedSet;
 import java.util.function.Consumer;
@@ -68,9 +68,9 @@ import org.apache.rat.mp.util.ScmIgnoreParser;
 import org.apache.rat.mp.util.ignore.GlobIgnoreMatcher;
 import org.apache.rat.mp.util.ignore.IgnoreMatcher;
 import org.apache.rat.mp.util.ignore.IgnoringDirectoryScanner;
-import org.apache.rat.plugin.BaseRatMojo;
 import org.apache.rat.report.IReportable;
 import org.apache.rat.utils.DefaultLog;
+import org.apache.rat.plugin.BaseRatMojo;
 import org.codehaus.plexus.util.DirectoryScanner;
 
 /**
@@ -93,7 +93,6 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
     @Parameter
     private String[] defaultLicenseFiles;
 
-    /** Additional license files to add. */
     @Parameter
     private String[] additionalLicenseFiles;
 
@@ -102,8 +101,8 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
      * @deprecated use noDefaultLicenses (note the change of state)
      */
     @Deprecated
-    @Parameter(property = "rat.addDefaultLicenses", name = "addDefaultLicenses")
-    public void setAddDefaultLicenses(final boolean addDefaultLicenses) {
+    @Parameter(property = "rat.addDefaultLicenses", name="addDefaultLicenses")
+    public void setAddDefaultLicenses(boolean addDefaultLicenses) {
         setNoDefaultLicenses(!addDefaultLicenses);
     }
 
@@ -113,14 +112,13 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
     @Parameter(property = "rat.addDefaultLicenseMatchers")
     private boolean addDefaultLicenseMatchers;
 
-    /** a list of approved licenses */
+
     @Parameter(required = false)
     private String[] approvedLicenses;
 
-    /** A file containing a list of approved licenses */
     @Parameter(property = "rat.approvedFile")
     private String approvedLicenseFile;
-
+    
     /**
      * Specifies the license families to accept.
      *
@@ -130,8 +128,8 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
     @Deprecated // remove in v1.0
     @Parameter
     private SimpleLicenseFamily[] licenseFamilies;
+    
 
-    /** The list of licenses defined in the pom */
     @Parameter
     private Object[] licenses;
 
@@ -155,40 +153,34 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
 
     /**
      * Specifies the include files character set. Defaults
-     * to @code{${project.build.sourceEncoding}), or @code{UTF-8}.
+     * to @code{${project.build.sourceEncoding}), or @code{UTF8}.
      */
     @Parameter(property = "rat.includesFileCharset", defaultValue = "${project.build.sourceEncoding}")
     private String includesFileCharset;
 
-    /** A list of files to exclude */
     private List<String> excludesList = new ArrayList<>();
 
-    /**
-     * Used for testing only.
-     * @return The list of excluded files.
-     */
+    // for testing
     List<String> getExcludes() {
         return excludesList;
     }
     /**
      * Specifies files, which are excluded in the report. By default, no files are
      * excluded.
-     * @param excludes the files to be excluded.
      * @deprecated use exclude
      */
     @Deprecated
     @Parameter
-    public void setExcludes(final String[] excludes) {
+    public void setExcludes(String[] excludes) {
         this.excludesList.addAll(Arrays.asList(excludes));
     }
 
     @Override
     @Parameter(property = "rat.exclude")
-    public void setExclude(final String exclude) {
+    public void setExclude(String exclude) {
         excludesList.add(exclude);
     }
 
-    /** The list of files to exclude */
     private List<String> excludesFileList = new ArrayList<>();
     // for testing
     List<String> getExcludesFile() {
@@ -203,18 +195,18 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
      */
     @Deprecated
     @Parameter(property = "rat.excludesFile")
-    public void setExcludesFile(final String excludeFile) {
+    public void setExcludesFile(String excludeFile) {
         excludesFileList.add(excludeFile);
     }
 
     @Override
-    public void setExcludeFile(final String file) {
+    public void setExcludeFile(String file) {
         excludesFileList.add(file);
     }
 
     /**
      * Specifies the include files character set. Defaults
-     * to @code{${project.build.sourceEncoding}), or @code{UTF-8}.
+     * to @code{${project.build.sourceEncoding}), or @code{UTF8}.
      */
     @Parameter(property = "rat.excludesFileCharset", defaultValue = "${project.build.sourceEncoding}")
     private String excludesFileCharset;
@@ -315,13 +307,13 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
         }
         return result;
     }
-
+    
     @Deprecated // remove this for version 1.0
     private Stream<License> getLicenses() {
         if (licenses == null) {
             return Stream.empty();
         }
-        return Arrays.stream(licenses).filter(s -> s instanceof License).map(License.class::cast);
+        return Arrays.stream(licenses).filter( s -> {return s instanceof License;}).map(License.class::cast);
     }
 
     @Deprecated // remove this for version 1.0
@@ -329,24 +321,24 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
         if (licenses == null) {
             return Stream.empty();
         }
-        return Arrays.stream(licenses).filter(s -> s instanceof DeprecatedConfig).map(DeprecatedConfig.class::cast);
+        return Arrays.stream(licenses).filter( s -> {return s instanceof DeprecatedConfig;}).map(DeprecatedConfig.class::cast);
     }
-
+    
     @Deprecated // remove this for version 1.0
-    private void reportDeprecatedProcessing() {
+    private void reportDeprecatedProcessing()
+    {
         if (getDeprecatedConfigs().findAny().isPresent()) {
-            Log log = getLog();
-            log.warn("Configuration uses deprecated configuration.  Please upgrade to v0.17 configuration options");
+            getLog().warn("Configuration uses deprecated configuration.  Please upgrade to v0.17 configuration options");
         }
     }
-
+    
     @Deprecated // remove this for version 1.0
-    private void processLicenseFamilies(final ReportConfiguration config) {
+    private void processLicenseFamilies(ReportConfiguration config) {
         List<ILicenseFamily> families = getDeprecatedConfigs().map(DeprecatedConfig::getLicenseFamily).filter(Objects::nonNull).collect(Collectors.toList());
         if (licenseFamilies != null) {
             for (SimpleLicenseFamily slf : licenseFamilies) {
                 if (StringUtils.isBlank(slf.getFamilyCategory())) {
-                    families.stream().filter(f -> f.getFamilyName().equalsIgnoreCase(slf.getFamilyName())).findFirst()
+                    families.stream().filter( f -> f.getFamilyName().equalsIgnoreCase(slf.getFamilyName())).findFirst()
                     .ifPresent(config::addApprovedLicenseCategory);
                 } else {
                     config.addApprovedLicenseCategory(ILicenseFamily.builder().setLicenseFamilyCategory(slf.getFamilyCategory())
@@ -356,57 +348,35 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
             }
         }
     }
-
+    
     private org.apache.rat.utils.Log makeLog() {
         return new org.apache.rat.utils.Log() {
-            private final Log log = getLog();
-
+            final Log log = getLog();
             @Override
-            public void log(final Level level, final String msg) {
-                switch (level) {
-                    case DEBUG:
-                        log.debug(msg);
-                        break;
-                    case INFO:
-                        log.info(msg);
-                        break;
-                    case WARN:
-                        log.warn(msg);
-                        break;
-                    case ERROR:
-                        log.error(msg);
-                        break;
-                    case OFF:
-                        break;
-                }
+            public void log(Level level, String msg) {
+                switch (level)
+                {
+                case DEBUG:
+                    log.debug(msg);
+                    break;
+                case INFO:
+                    log.info(msg);;
+                    break;
+                case WARN:
+                    log.warn(msg);
+                    break;
+                case ERROR:
+                    log.error(msg);
+                    break;
+                case OFF:
+                    break;
             }
-        };
+            }};
     }
-
+    
     protected ReportConfiguration getConfiguration() throws MojoExecutionException {
         DefaultLog.setInstance(makeLog());
         try {
-            Log log = getLog();
-            if (log.isDebugEnabled()) {
-                log.debug("Start BaseRatMojo Configuration options");
-                for (Map.Entry<String, List<String>> entry : args.entrySet()) {
-                    log.debug(String.format(" * %s %s", entry.getKey(), String.join(", ", entry.getValue())));
-                }
-                log.debug("End BaseRatMojo Configuration options");
-            }
-
-            String key = "--" + createName(OptionCollection.EXCLUDE_CLI.getLongOpt());
-            List<String> argList = args.get(key);
-            if (argList != null) {
-                excludesList.addAll(argList);
-            }
-            args.remove(key);
-            key = "--" + createName(OptionCollection.EXCLUDE_FILE_CLI.getLongOpt());
-            argList = args.get(key);
-            if (argList != null) {
-                excludesFileList.addAll(argList);
-            }
-            args.remove(key);
             ReportConfiguration config = OptionCollection.parseCommands(args().toArray(new String[0]),
                     o -> getLog().warn("Help option not supported"),
                     true);
@@ -433,11 +403,11 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
                 }
             }
             if (families != null || getDeprecatedConfigs().findAny().isPresent()) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("%s license families loaded from pom", families.length));
+                if (getLog().isDebugEnabled()) {
+                    getLog().debug(String.format("%s license families loaded from pom", families.length));
                 }
-                Consumer<ILicenseFamily> logger = log.isDebugEnabled() ? l -> log.debug(String.format("Family: %s", l))
-                        : l -> {
+                Consumer<ILicenseFamily> logger = getLog().isDebugEnabled() ? (l) -> getLog().debug(String.format("Family: %s", l))
+                        : (l) -> {
                 };
 
                 Consumer<ILicenseFamily> process = logger.andThen(config::addFamily);
@@ -454,15 +424,15 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
             }
 
             if (licenses != null) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("%s licenses loaded from pom", licenses.length));
+                if (getLog().isDebugEnabled()) {
+                    getLog().debug(String.format("%s licenses loaded from pom", licenses.length));
                 }
-                Consumer<ILicense> logger = log.isDebugEnabled() ? l -> log.debug(String.format("License: %s", l))
-                        : l -> {
+                Consumer<ILicense> logger = getLog().isDebugEnabled() ? (l) -> getLog().debug(String.format("License: %s", l))
+                        : (l) -> {
                 };
                 Consumer<ILicense> addApproved = (approvedLicenses == null || approvedLicenses.length == 0)
-                        ? l -> config.addApprovedLicenseCategory(l.getLicenseFamily())
-                        : l -> {
+                        ? (l) -> config.addApprovedLicenseCategory(l.getLicenseFamily())
+                        : (l) -> {
                 };
 
                 Consumer<ILicense> process = logger.andThen(config::addLicense).andThen(addApproved);
@@ -479,7 +449,7 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
         }
     }
 
-    protected void logLicenses(final Collection<ILicense> licenses) {
+    protected void logLicenses(Collection<ILicense> licenses) {
         if (getLog().isDebugEnabled()) {
             getLog().debug("The following " + licenses.size() + " licenses are activated:");
             for (ILicense license : licenses) {
@@ -538,14 +508,14 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
         }
     }
 
-    private void setIncludes(final DirectoryScanner ds) throws MojoExecutionException {
-        if (includes != null && includes.length > 0 || includesFile != null) {
+    private void setIncludes(DirectoryScanner ds) throws MojoExecutionException {
+        if ((includes != null && includes.length > 0) || includesFile != null) {
             final List<String> includeList = new ArrayList<>();
             if (includes != null) {
                 includeList.addAll(Arrays.asList(includes));
             }
             if (includesFile != null) {
-                final String charset = includesFileCharset == null ? "UTF-8" : includesFileCharset;
+                final String charset = includesFileCharset == null ? "UTF8" : includesFileCharset;
                 final File f = new File(includesFile);
                 if (!f.isFile()) {
                     getLog().error("IncludesFile not found: " + f.getAbsolutePath());
@@ -558,32 +528,28 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
         }
     }
 
-    private List<String> getPatternsFromFile(final File file, final String charset) throws MojoExecutionException {
+    private List<String> getPatternsFromFile(File pFile, String pCharset) throws MojoExecutionException {
+        Throwable th = null;
         final List<String> patterns = new ArrayList<>();
-        try (InputStream inputStream = Files.newInputStream(file.toPath());
-             BufferedInputStream bis = new BufferedInputStream(inputStream);
-            Reader reader = new InputStreamReader(bis, charset);
-            BufferedReader bufferedReader = new BufferedReader(reader)) {
+        try (
+            InputStream is = Files.newInputStream(pFile.toPath());
+            BufferedInputStream bis = new BufferedInputStream(is);
+            Reader r = new InputStreamReader(bis, pCharset);
+            BufferedReader br = new BufferedReader(r);) {
             for (;;) {
-                final String s = bufferedReader.readLine();
+                final String s = br.readLine();
                 if (s == null) {
                     break;
                 }
                 patterns.add(s);
             }
-        } catch (Throwable th) {
-            if (th instanceof RuntimeException) {
-                throw (RuntimeException) th;
-            }
-            if (th instanceof Error) {
-                throw (Error) th;
-            }
-            throw new MojoExecutionException(th.getMessage(), th);
+        } catch (IOException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
         }
         return patterns;
     }
 
-    private void setExcludes(final IgnoringDirectoryScanner ds) throws MojoExecutionException {
+    private void setExcludes(IgnoringDirectoryScanner ds) throws MojoExecutionException {
         final List<IgnoreMatcher> ignoreMatchers = mergeDefaultExclusions();
         if (!excludesList.isEmpty()) {
             getLog().debug("No excludes explicitly specified.");
@@ -673,7 +639,7 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
                 if (!f.canRead()) {
                     getLog().error("Excludes file not readable: " + f.getAbsolutePath());
                 }
-                final String charset = excludesFileCharset == null ? "UTF-8" : excludesFileCharset;
+                final String charset = excludesFileCharset == null ? "UTF8" : excludesFileCharset;
                 getLog().debug("Loading excludes from file " + f + ", using character set " + charset);
                 basicRules.addRules(getPatternsFromFile(f, charset));
             }
