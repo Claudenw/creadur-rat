@@ -18,6 +18,8 @@
  */
 package org.apache.rat;
 
+import static java.lang.String.format;
+
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -40,8 +42,6 @@ import org.apache.rat.license.LicenseSetFactory.LicenseFilter;
 import org.apache.rat.utils.DefaultLog;
 import org.apache.rat.utils.Log;
 import org.apache.rat.walker.NameBasedHiddenFileFilter;
-
-import static java.lang.String.format;
 
 /**
  * A class that provides the standard system defaults for the ReportConfiguration.
@@ -88,7 +88,7 @@ public final class Defaults {
      * Initialize the system configuration reader.
      */
     public static void init() {
-        Format fmt = Format.fromURI(DEFAULT_CONFIG_URI);
+        Format fmt = Format.from(DEFAULT_CONFIG_URI);
         MatcherReader mReader = fmt.matcherReader();
         if (mReader != null) {
             mReader.addMatchers(DEFAULT_CONFIG_URI);
@@ -127,7 +127,7 @@ public final class Defaults {
         SortedSet<String> approvedLicenseCategories = new TreeSet<>();
 
         for (URI uri : uris) {
-            Format fmt = Format.fromURI(uri);
+            Format fmt = Format.from(uri);
             MatcherReader mReader = fmt.matcherReader();
             if (mReader != null) {
                 mReader.addMatchers(uri);
@@ -155,7 +155,7 @@ public final class Defaults {
     public LicenseSetFactory getLicenseSetFactory() {
         return setFactory;
     }
-    
+
     /**
      * The Defaults builder.
      */
@@ -173,7 +173,6 @@ public final class Defaults {
 
         /**
          * Adds a URL to a configuration file to be read.
-         * 
          * @param uri the URI to add
          * @return this Builder for chaining
          */
@@ -184,7 +183,6 @@ public final class Defaults {
 
         /**
          * Adds the name of a configuration file to be read.
-         * 
          * @param fileName the name of the file to add.
          * @return this Builder for chaining
          * @throws MalformedURLException in case the fileName cannot be found.
@@ -195,7 +193,6 @@ public final class Defaults {
 
         /**
          * Adds a configuration file to be read.
-         * 
          * @param file the File to add.
          * @return this Builder for chaining
          * @throws MalformedURLException in case the file cannot be found.
@@ -206,7 +203,6 @@ public final class Defaults {
 
         /**
          * Removes a file from the list of configuration files to process.
-         * 
          * @param uri the URI of the file to remove.
          * @return this Builder for chaining
          */
@@ -217,7 +213,6 @@ public final class Defaults {
 
         /**
          * Removes a file name from the list of configuration files to process.
-         * 
          * @param fileName the fileName of the file to remove.
          * @return this Builder for chaining
          * @throws MalformedURLException in case the fileName cannot be found.
@@ -228,7 +223,6 @@ public final class Defaults {
 
         /**
          * Removes a file from the list of configuration files to process.
-         * 
          * @param file the File of the file to remove.
          * @return this Builder for chaining
          * @throws MalformedURLException in case the file cannot be found.
@@ -239,7 +233,6 @@ public final class Defaults {
 
         /**
          * Removes the default definitions from the list of files to process.
-         * 
          * @return this Builder for chaining
          */
         public Builder noDefault() {

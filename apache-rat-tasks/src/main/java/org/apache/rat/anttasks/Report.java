@@ -18,8 +18,6 @@
 */
 package org.apache.rat.anttasks;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -34,7 +32,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.OrFileFilter;
 import org.apache.rat.ConfigurationException;
-import org.apache.rat.Defaults;
 import org.apache.rat.ImplementationException;
 import org.apache.rat.OptionCollection;
 import org.apache.rat.ReportConfiguration;
@@ -317,7 +314,7 @@ public class Report extends BaseAntTask {
      * @param arg The Arg to get the values for.
      * @return The list of values or an empty list.
      */
-    protected List<String> getValues(Arg arg) {
+    protected List<String> getValues(final Arg arg) {
         List<String> result = new ArrayList<>();
         for (Option option : arg.group().getOptions()) {
             if (option.getLongOpt() != null) {
@@ -330,7 +327,11 @@ public class Report extends BaseAntTask {
         return result;
     }
 
-    protected void removeKey(Arg arg) {
+    /**
+     * Removes the values for the arg.
+     * @param arg the arg to remove the values for.
+     */
+    protected void removeKey(final Arg arg) {
         for (Option option : arg.group().getOptions()) {
             if (option.getLongOpt() != null) {
                 removeArg(option.getLongOpt());
