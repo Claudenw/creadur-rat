@@ -111,7 +111,7 @@ public final class Report {
      * @param opts The defined options.
      */
     static void printUsage(final PrintWriter writer, final Options opts) {
-        HelpFormatter helpFormatter = new HelpFormatter.Builder().get();
+        HelpFormatter helpFormatter = new HelpFormatter.Builder().setShowDeprecated(DEPRECATED_MSG).get();
         helpFormatter.setWidth(HELP_WIDTH);
         helpFormatter.setOptionComparator(new OptionCollection.OptionComparator());
         VersionInfo versionInfo = new VersionInfo();
