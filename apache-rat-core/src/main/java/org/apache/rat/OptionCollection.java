@@ -43,7 +43,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rat.api.Document;
 import org.apache.rat.commandline.Arg;
 import org.apache.rat.commandline.ArgumentContext;
-
 import org.apache.rat.commandline.StyleSheets;
 import org.apache.rat.document.impl.FileDocument;
 import org.apache.rat.license.LicenseSetFactory;
@@ -52,7 +51,6 @@ import org.apache.rat.utils.DefaultLog;
 import org.apache.rat.utils.Log;
 import org.apache.rat.walker.ArchiveWalker;
 import org.apache.rat.walker.DirectoryWalker;
-
 
 /**
  * The collection of standard options for the CLI as well as utility methods to manage them and methods to create the
