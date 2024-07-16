@@ -71,7 +71,11 @@ public final class Naming {
 
     private static List<String> fillColumns(List<String> columns, Option option, boolean addCLI, Predicate<Option> mavenFilter, Predicate<Option> antFilter) {
         if (addCLI) {
-            columns.add("--" + option.getLongOpt());
+            if (option.hasLongOpt()) {
+                columns.add("--" + option.getLongOpt());
+            } else {
+                columns.add("-" + option.getOpt());
+            }
         }
         if (antFilter != null) {
             columns.add(antFilter.test(option) ? antFunctionName(option) : "-- not supported --");
@@ -79,7 +83,12 @@ public final class Naming {
         if (mavenFilter != null) {
             columns.add(mavenFilter.test(option) ? mavenFunctionName(option) : "-- not supported --");
         }
-        columns.add(option.getDescription());
+
+        StringBuilder desc = new StringBuilder();
+        if (option.isDeprecated()) {
+            desc.append("[").append(option.getDeprecated().toString()).append("] ");
+        }
+        columns.add(desc.append(StringUtils.defaultIfEmpty(option.getDescription(),"")).toString());
         return columns;
     }
 
@@ -171,6 +180,7 @@ public final class Naming {
                 }
                 underWriter.append(System.lineSeparator());
             }
+            underWriter.append(System.lineSeparator());
         }
     }
 

@@ -293,7 +293,11 @@ public enum Arg {
                     .desc(format("Specifies the level of detail in STANDARD file reporting. (default is %s)",
                             Defaults.STANDARD_PROCESSING))
                     .converter(s -> ReportConfiguration.Processing.valueOf(s.toUpperCase()))
-                    .build()));
+                    .build())),
+
+    /** Provide license definition listing */
+    HELP_LICENSES(new OptionGroup()
+    .addOption(Option.builder().longOpt("help-licenses").desc("Print information about registered licenses.").build()));
 
     /** The option group for the argument */
     private final OptionGroup group;
