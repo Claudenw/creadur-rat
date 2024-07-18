@@ -31,7 +31,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.Writer;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -62,7 +61,6 @@ import org.apache.rat.config.SourceCodeManagementSystems;
 import org.apache.rat.configuration.Format;
 import org.apache.rat.configuration.LicenseReader;
 import org.apache.rat.configuration.MatcherReader;
-import org.apache.rat.help.Licenses;
 import org.apache.rat.license.ILicense;
 import org.apache.rat.license.ILicenseFamily;
 import org.apache.rat.license.LicenseSetFactory.LicenseFilter;
@@ -502,42 +500,6 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
                 getLog().debug("* " + license.toString());
             }
         }
-    }
-
-    protected Writer logAsWriter() {
-        return new Writer(){
-            final Log log = getLog();
-            StringBuilder sb = new StringBuilder();
-            @Override
-            public void write(char[] cbuf, int off, int len) throws IOException {
-                String txt = String.copyValueOf(cbuf, off, len);
-                int pos = txt.indexOf(System.lineSeparator());
-                if (pos == -1) {
-                    sb.append(txt);
-                } else {
-                    while (pos > -1) {
-                        log.info(sb.append(txt.substring(0, pos)).toString());
-                        sb.delete(0,sb.length());
-                        txt = txt.substring(pos+1);
-                        pos = txt.indexOf(System.lineSeparator());
-                    }
-                    sb.append(txt);
-                }
-            }
-
-            @Override
-            public void flush() throws IOException {
-                if (sb.length() > 0) {
-                    log.info(sb.toString());
-                }
-                sb = new StringBuilder();
-            }
-
-            @Override
-            public void close() throws IOException {
-                flush();
-            }
-        };
     }
 
     /**
