@@ -412,7 +412,7 @@ public enum Arg {
             ctxt.getCommandLine().hasOption(CONFIGURATION.getSelected());
             defaultBuilder.noDefault();
         }
-        ctxt.getConfiguration().setFrom(defaultBuilder.build(ctxt.getLog()));
+        ctxt.getConfiguration().setFrom(defaultBuilder.build());
 
         if (FAMILIES_APPROVED.isSelected()) {
             for (String cat : ctxt.getCommandLine().getOptionValues(FAMILIES_APPROVED.getSelected())) {
@@ -480,11 +480,10 @@ public enum Arg {
     /**
      * Creates a filename filter from patterns to exclude.
      * Package provide for use in testing.
-     * @param log the Logger to use.
      * @param excludes the list of patterns to exclude.
      * @return the FilenameFilter tht excludes the patterns or an empty optional.
      */
-    static Optional<IOFileFilter> parseExclusions(final Log log, final List<String> excludes) {
+    static Optional<IOFileFilter> parseExclusions(final List<String> excludes) {
         final OrFileFilter orFilter = new OrFileFilter();
         int ignoredLines = 0;
         for (String exclude : excludes) {
@@ -509,7 +508,7 @@ public enum Arg {
             }
         }
         if (ignoredLines > 0) {
-            log.info("Ignored " + ignoredLines + " lines in your exclusion files as comments or empty lines.");
+            DefaultLog.getInstance().info("Ignored " + ignoredLines + " lines in your exclusion files as comments or empty lines.");
         }
         return orFilter.getFileFilters().isEmpty() ? Optional.empty() : Optional.of(orFilter);
     }
@@ -529,13 +528,13 @@ public enum Arg {
         if (EXCLUDE.isSelected()) {
             String[] excludes = ctxt.getCommandLine().getOptionValues(EXCLUDE.getSelected());
             if (excludes != null) {
-                parseExclusions(ctxt.getConfiguration().getLog(), Arrays.asList(excludes)).ifPresent(ctxt.getConfiguration()::setFilesToIgnore);
+                parseExclusions(Arrays.asList(excludes)).ifPresent(ctxt.getConfiguration()::setFilesToIgnore);
             }
         }
         if (EXCLUDE_FILE.isSelected()) {
             String excludeFileName = ctxt.getCommandLine().getOptionValue(EXCLUDE_FILE.getSelected());
             if (excludeFileName != null) {
-                parseExclusions(ctxt.getConfiguration().getLog(), FileUtils.readLines(new File(excludeFileName), StandardCharsets.UTF_8))
+                parseExclusions(FileUtils.readLines(new File(excludeFileName), StandardCharsets.UTF_8))
                         .ifPresent(ctxt.getConfiguration()::setFilesToIgnore);
             }
         }
@@ -558,19 +557,18 @@ public enum Arg {
     /**
      * Process the log level setting.
      * @param commandLine The command line to process.
-     * @param log The log to set.
      */
-    public static void processLogLevel(final CommandLine commandLine, final Log log) {
+    public static void processLogLevel(final CommandLine commandLine) {
         if (LOG_LEVEL.getSelected() != null) {
-            if (log instanceof DefaultLog) {
-                DefaultLog dLog = (DefaultLog) log;
+            if (DefaultLog.getInstance() instanceof DefaultLog) {
+                DefaultLog dLog = (DefaultLog) DefaultLog.getInstance();
                 try {
                     dLog.setLevel(commandLine.getParsedOptionValue(LOG_LEVEL.getSelected()));
                 } catch (ParseException e) {
-                    logParseException(log, e, LOG_LEVEL.getSelected(), commandLine, dLog.getLevel());
+                    logParseException(DefaultLog.getInstance(), e, LOG_LEVEL.getSelected(), commandLine, dLog.getLevel());
                 }
             } else {
-                log.error("Given log was not a DefaultLog instance. LogLevel not set.");
+                DefaultLog.getInstance().error("log was not a DefaultLog instance. LogLevel not set.");
             }
         }
     }
@@ -629,7 +627,7 @@ public enum Arg {
             try {
                 File f = ctxt.getCommandLine().getParsedOptionValue(OUTPUT_FILE.getSelected());
                 if (f.getParentFile().mkdirs() && !f.isDirectory()) {
-                    ctxt.getLog().error("Could not create report parent directory " + f);
+                    DefaultLog.getInstance().error("Could not create report parent directory " + f);
                 }
                 ctxt.getConfiguration().setOut(f);
             } catch (ParseException e) {
@@ -646,7 +644,7 @@ public enum Arg {
             } else {
                 String[] style = ctxt.getCommandLine().getOptionValues(OUTPUT_STYLE.getSelected());
                 if (style.length != 1) {
-                    ctxt.getLog().error("Please specify a single stylesheet");
+                    DefaultLog.getInstance().error("Please specify a single stylesheet");
                     throw new ConfigurationException("Please specify a single stylesheet");
                 }
                 ctxt.getConfiguration().setStyleSheet(StyleSheets.getStyleSheet(style[0]));

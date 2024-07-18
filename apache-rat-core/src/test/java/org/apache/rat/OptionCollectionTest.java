@@ -133,7 +133,7 @@ public class OptionCollectionTest {
     public void testDefaultConfiguration() throws ParseException, IOException {
         String[] empty = {};
         CommandLine cl = new DefaultParser().parse(OptionCollection.buildOptions(), empty);
-        ReportConfiguration config = OptionCollection.createConfiguration(DefaultLog.getInstance(), "", cl);
+        ReportConfiguration config = OptionCollection.createConfiguration("", cl);
         ReportConfigurationTest.validateDefault(config);
     }
 

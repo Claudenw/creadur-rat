@@ -20,24 +20,56 @@ package org.apache.rat.tools;
 
 import static java.lang.String.format;
 
+import java.io.CharArrayWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.function.Predicate;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.apache.rat.DeprecationReporter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rat.OptionCollection;
+import org.apache.rat.help.AbstractHelp;
 
 /**
  * A simple tool to convert CLI options to Maven and Ant format and produce a CSV file.
+ *
+ * Options
+ * <ul>
+ *     <li>--ant   Produces ant options in result</li>
+ *     <li>--maven Produces maven options in result</li>
+ *     <li>--csv   Produces CSV output text is produced</li>
+ * </ul>
+ * Note: if neither --ant nor --maven are included both will be listed.
  */
 public final class Naming {
 
     private Naming() { }
 
+    private static final Option MAVEN = Option.builder().longOpt("maven").desc("Produce Maven name mapping").build();
+    private static final Option ANT = Option.builder().longOpt("ant").desc("Produce Ant name mapping").build();
+    private static final Option CSV = Option.builder().longOpt("csv").desc("Produce text format").build();
+    private static final Option CLI = Option.builder().longOpt("cli").desc("Produce CLI name mapping").build();
+    private static final Option INCLUDE_DEPRECATED = Option.builder().longOpt("include-deprecated")
+            .desc("Include deprecated options.").build();
+
+    private static final Options OPTIONS = new Options().addOption(MAVEN).addOption(ANT).addOption(CSV)
+            .addOption(CLI).addOption(INCLUDE_DEPRECATED);
     /**
      * Creates the CSV file.
      * Requires 1 argument:

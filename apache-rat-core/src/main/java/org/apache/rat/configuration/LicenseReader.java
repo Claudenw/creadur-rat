@@ -23,7 +23,6 @@ import java.util.SortedSet;
 
 import org.apache.rat.license.ILicense;
 import org.apache.rat.license.ILicenseFamily;
-import org.apache.rat.utils.Log;
 
 /**
  * An interface describing the methods of a LicenseReader.
@@ -53,10 +52,4 @@ public interface LicenseReader {
      * empty list if none specified.
      */
     SortedSet<String> approvedLicenseId();
-
-    /**
-     * Sets the logger to use during parsing.
-     * @param log the log to use.
-     */
-    void setLog(Log log);
 }

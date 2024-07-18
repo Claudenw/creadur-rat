@@ -146,7 +146,7 @@ public final class OptionCollection {
             // for "commandLine"
         }
 
-        Arg.processLogLevel(commandLine, log);
+        Arg.processLogLevel(commandLine);
 
         if (commandLine.hasOption(HELP)) {
             helpCmd.accept(opts);
@@ -154,7 +154,7 @@ public final class OptionCollection {
         }
 
         if (commandLine.hasOption(Arg.HELP_LICENSES.option())) {
-            new Licenses(createConfiguration(log, null, commandLine), new PrintWriter(System.out)).printHelp();
+            new Licenses(createConfiguration(null, commandLine), new PrintWriter(System.out)).printHelp();
             return null;
         }
 
@@ -173,13 +173,12 @@ public final class OptionCollection {
         if (!lst.isEmpty()) {
             clArgs[0] = lst.get(0);
         }
-        return createConfiguration(log, clArgs[0], commandLine);
+        return createConfiguration(clArgs[0], commandLine);
     }
 
     /**
      * Create the report configuration.
      * Note: this method is package private for testing. You probably want one of the {@code ParseCommands} methods.
-     * @param log The log to log errors to.
      * @param baseDirectory the base directory where files will be found.
      * @param cl the parsed command line.
      * @return a ReportConfiguration
@@ -187,8 +186,8 @@ public final class OptionCollection {
      * @see #parseCommands(String[], Consumer)
      * @see #parseCommands(String[], Consumer, boolean)
      */
-    static ReportConfiguration createConfiguration(final Log log, final String baseDirectory, final CommandLine cl) throws IOException {
-        final ReportConfiguration configuration = new ReportConfiguration(log);
+    static ReportConfiguration createConfiguration(final String baseDirectory, final CommandLine cl) throws IOException {
+        final ReportConfiguration configuration = new ReportConfiguration();
         new ArgumentContext(configuration, cl).processArgs();
         if (StringUtils.isNotBlank(baseDirectory)) {
             configuration.setReportable(getDirectory(baseDirectory, configuration));
@@ -217,7 +216,7 @@ public final class OptionCollection {
         File base = new File(baseDirectory);
 
         if (!base.exists()) {
-            config.getLog().log(Log.Level.ERROR, "Directory '" + baseDirectory + "' does not exist");
+            DefaultLog.getInstance().log(Log.Level.ERROR, "Directory '" + baseDirectory + "' does not exist");
             return null;
         }
 
