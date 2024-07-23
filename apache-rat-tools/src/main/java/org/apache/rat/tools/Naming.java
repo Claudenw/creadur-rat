@@ -63,13 +63,14 @@ public final class Naming {
 
     private static final Option MAVEN = Option.builder().longOpt("maven").desc("Produce Maven name mapping").build();
     private static final Option ANT = Option.builder().longOpt("ant").desc("Produce Ant name mapping").build();
-    private static final Option CSV = Option.builder().longOpt("csv").desc("Produce text format").build();
+    private static final Option CSV = Option.builder().longOpt("csv").desc("Produce CSV format").build();
     private static final Option CLI = Option.builder().longOpt("cli").desc("Produce CLI name mapping").build();
     private static final Option INCLUDE_DEPRECATED = Option.builder().longOpt("include-deprecated")
             .desc("Include deprecated options.").build();
 
-    private static final Options OPTIONS = new Options().addOption(MAVEN).addOption(ANT).addOption(CSV)
-            .addOption(CLI).addOption(INCLUDE_DEPRECATED);
+    private static final Options OPTIONS = new Options().addOption(MAVEN).addOption(ANT).addOption(CLI)
+            .addOption(CSV)
+            .addOption(INCLUDE_DEPRECATED);
     /**
      * Creates the CSV file.
      * Requires 1 argument:
@@ -95,7 +96,8 @@ public final class Naming {
         try (Writer underWriter =cl.getArgs().length != 0 ? new FileWriter(cl.getArgs()[0]) : new OutputStreamWriter(System.out)) {
             if (cl.hasOption(CSV)) {
                 printCSV(filter, cl.hasOption(CLI), mavenFilter, antFilter, underWriter);
-            } else {
+            }
+            else {
                 printText(filter, cl.hasOption(CLI), mavenFilter, antFilter, underWriter);
             }
         }
