@@ -23,6 +23,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rat.OptionCollection;
 import org.apache.rat.ReportConfiguration;
@@ -43,6 +44,8 @@ public final class Documentation {
      * @throws IOException on error
      */
     public static void main(final String[] args) throws IOException {
+
+
         ReportConfiguration config = OptionCollection.parseCommands(args, Documentation::printUsage, true);
         if (config != null) {
             try (Writer writer = config.getWriter().get()) {
