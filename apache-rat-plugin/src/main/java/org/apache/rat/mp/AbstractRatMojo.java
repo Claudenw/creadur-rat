@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.MalformedURLException;
@@ -45,11 +46,9 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
 import org.apache.commons.cli.Option;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.rat.ConfigurationException;
@@ -73,6 +72,7 @@ import org.apache.rat.mp.util.ignore.IgnoringDirectoryScanner;
 import org.apache.rat.plugin.BaseRatMojo;
 import org.apache.rat.report.IReportable;
 import org.apache.rat.utils.DefaultLog;
+import org.apache.rat.utils.Log;
 import org.codehaus.plexus.util.DirectoryScanner;
 
 /**
@@ -88,7 +88,8 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
 
     /**
      * Specifies the licenses to accept. By default, these are added to the default
-     * licenses, unless you set {@link #addDefaultLicenseMatchers} to false.
+     * licenses, unless you set &lt;addDefaultLicenseMatchers&gt; to false.  Arguments should be
+     * file name of &lt;Configs&gt; file structure.
      *
      * @since 0.8
      */
@@ -101,7 +102,7 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
 
     /**
      * Whether to add the default list of licenses.
-     * @deprecated use noDefaultLicenses (note the change of state)
+     * @deprecated Deprecated for removal since 0.17: Use &lt;configurationNoDefaults&gt; instead (note the change of state).
      */
     @Deprecated
     @Parameter(property = "rat.addDefaultLicenses", name = "addDefaultLicenses")
@@ -129,15 +130,21 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
      * @since 0.8
      * @deprecated use LicenseFamily section of configuration file.
      */
-    @Deprecated // remove in v1.0
+    @Deprecated
     @Parameter
     private SimpleLicenseFamily[] licenseFamilies;
 
-    /** The list of license definitions */
+    /** The list of license definitions.
+     * @deprecated Deprecated for removal since 0.17: Use &lt;Config&gt; instead.  See Config file documentation.
+     */
+    @Deprecated
     @Parameter
     private Object[] licenses;
 
-    /** The list of family definitions */
+    /** The list of family definitions.
+     * @deprecated use &lt;Configs&gt;
+     */
+    @Deprecated
     @Parameter
     private Family[] families;
 
@@ -156,8 +163,8 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
     private String includesFile;
 
     /**
-     * Specifies the include files character set. Defaults
-     * to @code{${project.build.sourceEncoding}), or @code{UTF-8}.
+     * Specifies the include files character set.
+     * if ${project.build.sourceEncoding} is not set defaults to UTF-8
      */
     @Parameter(property = "rat.includesFileCharset", defaultValue = "${project.build.sourceEncoding}")
     private String includesFileCharset;
@@ -181,8 +188,8 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
     }
 
     /**
-     * Specifies the include files character set. Defaults
-     * to @code{${project.build.sourceEncoding}), or @code{UTF-8}.
+     * Specifies the include files character set.
+     * if ${project.build.sourceEncoding} is not set defaults to UTF-8
      */
     @Parameter(property = "rat.excludesFileCharset", defaultValue = "${project.build.sourceEncoding}")
     private String excludesFileCharset;
@@ -303,8 +310,7 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
     @Deprecated // remove this for version 1.0
     private void reportDeprecatedProcessing() {
         if (getDeprecatedConfigs().findAny().isPresent()) {
-            Log log = getLog();
-            log.warn("Configuration uses deprecated configuration.  Please upgrade to v0.17 configuration options");
+            DefaultLog.getInstance().warn("Configuration uses deprecated configuration.  Please upgrade to v0.17 configuration options");
         }
     }
 
@@ -358,7 +364,7 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
 
     private org.apache.rat.utils.Log makeLog() {
         return new org.apache.rat.utils.Log() {
-            private final Log log = getLog();
+            private final org.apache.maven.plugin.logging.Log log = getLog();
             @Override
             public void log(final Level level, final String msg) {
                 switch (level) {
@@ -384,8 +390,8 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
     protected ReportConfiguration getConfiguration() throws MojoExecutionException {
         DefaultLog.setInstance(makeLog());
         try {
-            Log log = getLog();
-            if (log.isDebugEnabled()) {
+            Log log = DefaultLog.getInstance();
+            if (super.getLog().isDebugEnabled()) {
                 log.debug("Start BaseRatMojo Configuration options");
                 for (Map.Entry<String, List<String>> entry : args.entrySet()) {
                     log.debug(String.format(" * %s %s", entry.getKey(), String.join(", ", entry.getValue())));
@@ -398,6 +404,9 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
 
             excludesFileList.addAll(getValues(Arg.EXCLUDE_FILE));
             removeKey(Arg.EXCLUDE_FILE);
+
+            boolean helpLicenses = !getValues(Arg.HELP_LICENSES).isEmpty();
+            removeKey(Arg.HELP_LICENSES);
 
             ReportConfiguration config = OptionCollection.parseCommands(args().toArray(new String[0]),
                     o -> getLog().warn("Help option not supported"),
@@ -421,10 +430,10 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
                 }
             }
             if (families != null || getDeprecatedConfigs().findAny().isPresent()) {
-                if (log.isDebugEnabled()) {
+                if (super.getLog().isDebugEnabled()) {
                     log.debug(String.format("%s license families loaded from pom", families.length));
                 }
-                Consumer<ILicenseFamily> logger = log.isDebugEnabled() ? l -> log.debug(String.format("Family: %s", l))
+                Consumer<ILicenseFamily> logger = super.getLog().isDebugEnabled() ? l -> log.debug(String.format("Family: %s", l))
                         : l -> {
                 };
 
@@ -442,10 +451,10 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
             }
 
             if (licenses != null) {
-                if (log.isDebugEnabled()) {
+                if (super.getLog().isDebugEnabled()) {
                     log.debug(String.format("%s licenses loaded from pom", licenses.length));
                 }
-                Consumer<ILicense> logger = log.isDebugEnabled() ? l -> log.debug(String.format("License: %s", l))
+                Consumer<ILicense> logger = super.getLog().isDebugEnabled() ? l -> log.debug(String.format("License: %s", l))
                         : l -> {
                 };
                 Consumer<ILicense> addApproved = (approvedLicenses == null || approvedLicenses.length == 0)
@@ -461,6 +470,10 @@ public abstract class AbstractRatMojo extends BaseRatMojo {
             }
 
             config.setReportable(getReportable());
+
+            if (helpLicenses) {
+                new org.apache.rat.help.Licenses(config, new PrintWriter(log.asWriter())).printHelp();
+            }
             return config;
         } catch (IOException e) {
             throw new MojoExecutionException(e);

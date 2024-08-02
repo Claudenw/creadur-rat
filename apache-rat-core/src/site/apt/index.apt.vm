@@ -53,13 +53,13 @@ Developing Rat
 
 * Diving into Core
 
- Browse the source {{{./xref/index.html}here}}.
-
- Read the JavaDocs {{{./apidocs/index.html}here}}.
+ Browse {{{./xref/index.html}the source}}.
 
 +------------------------------------------+
 git clone https://gitbox.apache.org/repos/asf/creadur-rat.git
 +------------------------------------------+
+
+ Read {{{./apidocs/index.html}the JavaDocs}}.
 
  Build with {{{https://maven.apache.org/} Apache Maven}}
 
