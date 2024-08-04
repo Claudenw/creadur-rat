@@ -34,13 +34,7 @@ import java.util.regex.Pattern;
 /**
  * A representation of a CLI option as a Maven option
  */
-public class MavenOption extends AbstractOption{
-
-    private static final Map<Arg,String> DEFAULT_VALUES = new HashMap<>();
-
-    static {
-        DEFAULT_VALUES.put(Arg.OUTPUT_FILE, "${project.build.directory}/rat.txt");
-    }
+public class MavenOption extends AbstractOption {
 
     private static final Map<Arg,String> DEFAULT_VALUES = new HashMap<>();
 
@@ -61,12 +55,10 @@ public class MavenOption extends AbstractOption{
     protected String cleanupName(Option option) {
         return format("<%s>", MavenGenerator.createName(option));
     }
-    /**
-     * Returns the value as an POM xml node.
-     * @return the pom xml node.
-     */
-    public String xmlNode() {
-        return format("<%1$s>", name);
+
+    @Override
+    protected String cleanupName(Option option) {
+        return format("<%s>", MavenGenerator.createName(option));
     }
 
     @Override
