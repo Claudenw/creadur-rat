@@ -115,11 +115,19 @@ public abstract class AbstractOption {
     }
 
     /**
-     * Determins if the option is deprecated.
+     * Determines if the option is deprecated.
      * @return {@code true} if the option is deprecated
      */
     final public boolean isDeprecated() {
         return option.isDeprecated();
+    }
+
+    /**
+     * Determines if the option is required.
+     * @return {@code true} if the option is required.
+     */
+    final public boolean isRequired() {
+        return option.isRequired();
     }
 
     /**
