@@ -153,7 +153,6 @@ public final class AntDocumentation {
         try (Writer out = new OutputStreamWriter(new FileOutputStream(f), StandardCharsets.UTF_8)) {
 
             printOptions(out, options, AntOption::isElement, "The element value types are listed in a table at the " +
-                    "bottom of this page.");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
