@@ -82,7 +82,7 @@ public class OptionMojoTest   {
     @BeforeAll
     public static void makeDirs() throws IOException {
         testPath.toFile().mkdirs();
-        POM_FMT = IOUtils.resourceToString("/optionTest/pom.tpl", StandardCharsets.UTF_8, OptionMojoTest.class.getClassLoader();
+        POM_FMT = IOUtils.resourceToString("/optionTest/pom.tpl", StandardCharsets.UTF_8);
     }
 
     @ParameterizedTest
@@ -125,7 +125,7 @@ public class OptionMojoTest   {
                writer.flush();
            }
            try {
-               final RatCheckMojo mojo = new SimpleMojoTestcase().getMojo(pomFile);
+               final RatCheckMojo mojo = new SimpleMojoTestcase(){}.getMojo(pomFile);
                Assertions.assertNotNull(mojo);
                return mojo;
            } catch (IOException e) {
@@ -214,7 +214,7 @@ public class OptionMojoTest   {
         }
     }
 
-    public static class SimpleMojoTestcase extends BetterAbstractMojoTestCase {
+    public static abstract class SimpleMojoTestcase extends BetterAbstractMojoTestCase {
 
         public RatCheckMojo getMojo(File pomFile) throws Exception {
             setUp();
