@@ -124,7 +124,7 @@ public enum Arg {
             .build())
             .addOption(Option.builder().longOpt("licenses").hasArgs().argName("File")
             .desc("File names for system configuration.")
-            .deprecated(DeprecatedAttributes.builder().setSince("0.17.0").setForRemoval(true).setDescription(StdMsgs.useMsg("--config")).get())
+            .deprecated(DeprecatedAttributes.builder().setSince("0.17").setForRemoval(true).setDescription(StdMsgs.useMsg("--config")).get())
             .build())),
 
     /** Group of options that skip the default configuration file */
@@ -138,7 +138,7 @@ public enum Arg {
 
     /** Option that adds approved licenses to the list */
     LICENSES_APPROVED(new OptionGroup().addOption(Option.builder().longOpt("licenses-approved").hasArgs().argName("LicenseID")
-            .desc("The approved License IDs.  These licenses will be added to the list of approved licenses.")
+            .desc("The approved License IDs. These licenses will be added to the list of approved licenses.")
             .build())),
 
     /** Option that adds approved licenses from a file */
@@ -149,7 +149,7 @@ public enum Arg {
 
     /** Option that specifies approved license families */
     FAMILIES_APPROVED(new OptionGroup().addOption(Option.builder().longOpt("license-families-approved").hasArgs().argName("FamilyID")
-            .desc("The approved License Family IDs.  These licenses families will be added to the list of approved licenses families.")
+            .desc("The approved License Family IDs. These licenses families will be added to the list of approved licenses families.")
             .build())),
 
     /** Option that specifies approved license families from a file */
@@ -160,7 +160,7 @@ public enum Arg {
 
     /** Option to remove licenses from the approved list */
     LICENSES_DENIED(new OptionGroup().addOption(Option.builder().longOpt("licenses-denied").hasArgs().argName("LicenseID")
-            .desc("The denied License IDs.  These licenses will be removed to the list of approved licenses. " +
+            .desc("The denied License IDs. These licenses will be removed to the list of approved licenses. " +
                     "Once licenses are removed they can not be added back.")
             .build())),
 
@@ -172,7 +172,7 @@ public enum Arg {
 
     /** Option to list license families to remove from the approved list */
     FAMILIES_DENIED(new OptionGroup().addOption(Option.builder().longOpt("license-families-denied").hasArgs().argName("FamilyID")
-            .desc("The denied License family IDs.  These license families will be removed from the list of approved licenses.")
+            .desc("The denied License family IDs. These license families will be removed from the list of approved licenses.")
             .build())),
 
     /** Option to read a list of license families to remove from the approved list */
@@ -277,7 +277,7 @@ public enum Arg {
     OUTPUT_FILE(new OptionGroup()
             .addOption(Option.builder().option("o").longOpt("out").hasArg().argName("File")
                     .desc("Define the output file where to write a report to.")
-                    .deprecated(DeprecatedAttributes.builder().setSince("0.17.0").setForRemoval(true).setDescription(StdMsgs.useMsg("--output-file")).get())
+                    .deprecated(DeprecatedAttributes.builder().setSince("0.17").setForRemoval(true).setDescription(StdMsgs.useMsg("--output-file")).get())
                     .type(File.class).build())
             .addOption(Option.builder().longOpt("output-file").hasArg().argName("File")
                     .desc("Define the output file where to write a report to.")
@@ -681,11 +681,13 @@ public enum Arg {
      * @param optionToFind the Option to locate.
      * @return The Arg or {@code null} if no Arg is found.
      */
-    public static Arg findArg(Option optionToFind) {
-        for (Arg arg : Arg.values()) {
-            for (Option candidate : arg.group.getOptions()) {
-                if (optionToFind.equals(candidate)) {
-                    return arg;
+    public static Arg findArg(final Option optionToFind) {
+        if (optionToFind != null) {
+            for (Arg arg : Arg.values()) {
+                for (Option candidate : arg.group.getOptions()) {
+                    if (optionToFind.equals(candidate)) {
+                        return arg;
+                    }
                 }
             }
         }
@@ -698,10 +700,12 @@ public enum Arg {
      * @return The Arg or {@code null} if no Arg is found.
      */
     public static Arg findArg(String key) {
-        for (Arg arg : Arg.values()) {
-            for (Option candidate : arg.group.getOptions()) {
-                if (key.equals(candidate.getKey()) || key.equals(candidate.getLongOpt())) {
-                    return arg;
+        if (key != null) {
+            for (Arg arg : Arg.values()) {
+                for (Option candidate : arg.group.getOptions()) {
+                    if (key.equals(candidate.getKey()) || key.equals(candidate.getLongOpt())) {
+                        return arg;
+                    }
                 }
             }
         }
@@ -719,7 +723,7 @@ public enum Arg {
         /**
          * Gets the standard "use instead" message for the specific name.
          * @param name the name of the option to use instead.
-         * @return
+         * @return combined "use instead" message.
          */
         public static String useMsg(String name) {
             return format("Use %s instead.", name);
@@ -735,6 +739,5 @@ public enum Arg {
        DEFAULT_VALUES.put(OUTPUT_STANDARD, Defaults.STANDARD_PROCESSING.name());
        DEFAULT_VALUES.put(OUTPUT_LICENSES, Defaults.LIST_LICENSES.name());
        DEFAULT_VALUES.put(OUTPUT_FAMILIES, Defaults.LIST_FAMILIES.name());
-
    }
 }
