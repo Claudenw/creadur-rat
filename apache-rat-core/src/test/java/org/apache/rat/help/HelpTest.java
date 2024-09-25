@@ -18,10 +18,12 @@
  */
 package org.apache.rat.help;
 
+import java.io.IOException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rat.OptionCollection;
 import org.apache.rat.Report;
+import org.apache.rat.config.exclusion.StandardCollection;
 import org.apache.rat.testhelpers.TextUtils;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class HelpTest {
     @Test
-    public void verifyAllOptionsListed() {
+    public void verifyAllOptionsListed() throws IOException {
         Options opts = OptionCollection.buildOptions();
         StringWriter out = new StringWriter();
         new Help(out).printUsage(opts);
@@ -52,19 +54,35 @@ public class HelpTest {
     }
 
     @Test
-    public void verifyArgumentsListed() {
+    public void verifyArgumentsListed() throws IOException {
         Options opts = OptionCollection.buildOptions();
         Set<String> argTypes = OptionCollection.getArgumentTypes().keySet();
         StringWriter out = new StringWriter();
-        new Help(out).printUsage(opts);
+        Help help = new Help(out);
+        help.printUsage(opts);
         String result = out.toString();
         System.out.println(result);
 
         for (Option option : opts.getOptions()) {
             if (option.getArgName() != null) {
                 assertTrue(argTypes.contains(option.getArgName()), () -> format("Argument 's' is missing from list", option.getArgName()));
-                TextUtils.assertPatternInTarget(format("^<%s>", option.getArgName()), result);
+                TextUtils.assertPatternInTarget(format("^ \\Q%s\\E", help.helpFormatter.asArgName(option.getArgName())), result);
             }
+        }
+    }
+
+    @Test
+    public void verifyStandardCollectionsListed() throws IOException {
+        Options opts = OptionCollection.buildOptions();
+        Set<String> argTypes = OptionCollection.getArgumentTypes().keySet();
+        StringWriter out = new StringWriter();
+        Help help = new Help(out);
+        help.printUsage(opts);
+        String result = out.toString();
+        System.out.println(result);
+
+        for (StandardCollection sc : StandardCollection.values()) {
+            TextUtils.assertPatternInTarget(format("^ \\Q%s\\E", sc.name()), result);
         }
     }
 }

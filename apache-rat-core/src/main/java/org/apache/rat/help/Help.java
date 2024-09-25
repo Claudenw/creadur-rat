@@ -18,13 +18,19 @@
  */
 package org.apache.rat.help;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.help.TableDef;
+
+import org.apache.commons.cli.help.TextStyle;
 import org.apache.rat.OptionCollection;
 import org.apache.rat.config.exclusion.StandardCollection;
 
@@ -45,16 +51,18 @@ public final class Help extends AbstractHelp {
             "Rat relies on heuristics: it may miss issues"
     };
 
-    /** The writer this instance writes to */
-    private final PrintWriter writer;
+    protected static final TextStyle[] COLUMN_STYLE = {
+            new TextStyle.Builder().setScaling(TextStyle.Scaling.FIXED).get(),
+            new TextStyle.Builder().setLeftPad(5).setIndent(2).get()
+    };
 
     /**
      * Creates a Help instance to write to the specified writer.
-     * @param writer the writer to write to.
+     * @param output the output to write to.
      */
-    public Help(final Writer writer) {
-        super();
-        this.writer = writer instanceof PrintWriter ? (PrintWriter) writer : new PrintWriter(writer);
+    public Help(final Appendable output) {
+        super(output);
+
     }
 
     /**
@@ -69,50 +77,70 @@ public final class Help extends AbstractHelp {
      * Print the usage to the specific PrintWriter.
      * @param opts The defined options.
      */
-    public void printUsage(final Options opts) {
+    public void printUsage(final Options opts) throws IOException {
         String syntax = format("java -jar apache-rat/target/apache-rat-%s.jar [options] [DIR|ARCHIVE]", versionInfo.getVersion());
-        helpFormatter.printHelp(writer, syntax, header("Available options"), opts, header("Argument Types"));
+        helpFormatter.printHelp(syntax, header("Available options"), opts, "", false);
 
-        String argumentPadding = createPadding(helpFormatter.getLeftPadding() + HELP_PADDING);
-        for (Map.Entry<String, Supplier<String>> argInfo : OptionCollection.getArgumentTypes().entrySet()) {
-            writer.format("%n<%s>%n", argInfo.getKey());
-            helpFormatter.printWrapped(writer, helpFormatter.getWidth(), helpFormatter.getLeftPadding() + HELP_PADDING + HELP_PADDING,
-                    argumentPadding + argInfo.getValue().get());
-        }
+        printArgumentTypes();
 
-        writer.println(header("Standard Collections"));
-        for (StandardCollection sc : StandardCollection.values()) {
-            writer.format("%n<%s>%n", sc.name());
-            helpFormatter.printWrapped(writer, helpFormatter.getWidth(), helpFormatter.getLeftPadding() + HELP_PADDING + HELP_PADDING,
-                    argumentPadding + sc.desc());
-            helpFormatter.printWrapped(writer, helpFormatter.getWidth(), helpFormatter.getLeftPadding() + HELP_PADDING + HELP_PADDING,
-                    argumentPadding + "File patterns: " + (sc.patterns().isEmpty() ? "<none>" : String.join(", ", sc.patterns())));
-            helpFormatter.printWrapped(writer, helpFormatter.getWidth(), helpFormatter.getLeftPadding() + HELP_PADDING + HELP_PADDING,
-                    argumentPadding + "Provides a path matcher: " + sc.hasDocumentNameMatchSupplier());
-            helpFormatter.printWrapped(writer, helpFormatter.getWidth(), helpFormatter.getLeftPadding() + HELP_PADDING + HELP_PADDING,
-                    argumentPadding + "Provides a file processor: " + sc.fileProcessor().hasNext());
-        }
-        writer.println("\nA path matcher will match specific information about the file.");
-        writer.println("\nA file processor will process the associated \"ignore\" file for include and esclude directives");
+        printStandardCollections();
 
-        writer.println(header("Notes"));
-        int idx = 1;
-        for (String note : NOTES) {
-            writer.format("%d. %s%n", idx++, note);
-        }
+        printNotes();
+    }
 
-        writer.flush();
+    public void printNotes() throws IOException {
+        serializer.writePara(header("Notes"));
+        serializer.writeList(true, Arrays.asList(NOTES));
     }
 
     /**
      * Prints the list of argument types to the writer.
      */
-    public void printArgumentTypes() {
-        String argumentPadding = createPadding(helpFormatter.getLeftPadding() + HELP_PADDING);
-        for (Map.Entry<String, Supplier<String>> argInfo : OptionCollection.getArgumentTypes().entrySet()) {
-            writer.format("%n<%s>%n", argInfo.getKey());
-            helpFormatter.printWrapped(writer, helpFormatter.getWidth(), helpFormatter.getLeftPadding() + HELP_PADDING + HELP_PADDING,
-                    argumentPadding + argInfo.getValue().get());
-        }
+    public void printArgumentTypes() throws IOException {
+        serializer.writeTable(TableDef.from(header("Argument Types"),
+                Arrays.asList(COLUMN_STYLE),
+                Arrays.asList("Name", "Meaning"),
+                () -> {
+                        List<List<String>> table = new ArrayList<List<String>>();
+                        for (Map.Entry<String, Supplier<String>> argInfo : OptionCollection.getArgumentTypes().entrySet()) {
+                            List<String> row = new ArrayList<>();
+                            row.add(helpFormatter.asArgName(argInfo.getKey()));
+                            row.add(argInfo.getValue().get());
+                            table.add(row);
+                        }
+                        return table.iterator();
+                    }
+                ));
+    }
+
+    public void printStandardCollections() throws IOException {
+        TextStyle.Builder styleBuilder = new TextStyle.Builder().setLeftPad(3).setIndent(2);
+        TextStyle[] styles = {
+                COLUMN_STYLE[0],
+                styleBuilder.setMinWidth(25).get(),
+                styleBuilder.setMinWidth(0).get(),
+                styleBuilder.setAlignment(TextStyle.Alignment.CENTER).setScaling(TextStyle.Scaling.FIXED).get(),
+                styleBuilder.get()
+        };
+
+        serializer.writeTable(TableDef.from(header("Standard Collections"),
+                Arrays.asList(styles),
+                Arrays.asList("Type", "Description", "Patterns", "Matcher","Proc"),
+                () -> {
+                List<List<String>> table = new ArrayList<>();
+                for (StandardCollection sc : StandardCollection.values()) {
+                    List<String> row = new ArrayList<>();
+                    row.add(sc.name());
+                    row.add(sc.desc());
+                    row.add(sc.patterns().isEmpty() ? "<none>" : String.join(", ", sc.patterns()));
+                    row.add(sc.hasDocumentNameMatchSupplier() ? "Yes" : "No");
+                    row.add(sc.fileProcessor().hasNext() ? "Yes" : "No");
+                    table.add(row);
+                }
+                return table.iterator();
+            }));
+
+        serializer.writeList(false, Arrays.asList("A path matcher will match specific information about the file.",
+                "A file processor will process the associated \"ignore\" file for include and exclude directives"));
     }
 }

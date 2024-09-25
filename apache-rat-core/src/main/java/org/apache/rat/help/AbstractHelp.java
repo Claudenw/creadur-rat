@@ -18,17 +18,17 @@
  */
 package org.apache.rat.help;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
-import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.help.HelpFormatter;
 import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.cli.help.OptionFormatter;
+import org.apache.commons.cli.help.TableDef;
+import org.apache.commons.cli.help.TextSerializer;
+import org.apache.commons.cli.help.TextStyle;
 import org.apache.commons.text.WordUtils;
 import org.apache.rat.OptionCollection;
 import org.apache.rat.VersionInfo;
@@ -47,18 +47,29 @@ public abstract class AbstractHelp {
     /** The width of the help report in chars. */
     public static final int HELP_WIDTH = 120;
     /** The number of chars to indent output with */
-    public static final int HELP_PADDING = 4;
+    public static final int DEFAULT_COLUMN_SPACING = 4;
 
     /** The help formatter for this instance */
-    protected final RatHelpFormatter helpFormatter;
+    protected final HelpFormatter helpFormatter;
     /** The version info for this instance */
     protected final VersionInfo versionInfo;
 
+    protected final TextSerializer serializer;
     /**
      * Base class to perform help output.
      */
-    protected AbstractHelp() {
-        helpFormatter = new RatHelpFormatter();
+    protected AbstractHelp(Appendable output) {
+        //ratOptionFormat = new RatOptionFormat(new DefaultOptionFormat.Builder());
+        serializer = new TextSerializer(output);
+        serializer.setMaxWidth(HELP_WIDTH);
+        OptionFormatter.Builder optBuilder = new OptionFormatter.Builder()
+                .setComparator(OptionCollection.OPTION_COMPARATOR)
+                .setDeprecatedFormatFunction(DEPRECATED_MSG);
+        helpFormatter = new HelpFormatter.Builder()
+                .setSerializer(serializer)
+                .setOptionFormatBuilder(optBuilder)
+                .setDefaultTableBuilder(this::ratOptionTable)
+                .build();
         versionInfo = new VersionInfo();
     }
 
@@ -88,123 +99,51 @@ public abstract class AbstractHelp {
      * @return the Header string.
      */
     public static String header(final String txt) {
-        return String.format("%n====== %s ======%n", WordUtils.capitalizeFully(txt));
+        return String.format("====== %s ======", WordUtils.capitalizeFully(txt));
     }
 
-    /**
-     * Provides help for formatting text.
-     */
-    public class RatHelpFormatter extends HelpFormatter {
+    public TableDef ratOptionTable(Iterable<Option> options) {
+        TextStyle.Builder builder = new TextStyle.Builder().setAlignment(TextStyle.Alignment.LEFT)
+                .setIndent(0).setScaling(TextStyle.Scaling.FIXED);
+        List<TextStyle> styles = new ArrayList<>();
+        styles.add(builder.get());
+        builder.setScaling(TextStyle.Scaling.VARIABLE).setLeftPad(DEFAULT_COLUMN_SPACING);
+            builder.setAlignment(TextStyle.Alignment.CENTER);
+            styles.add(builder.get());
 
-        /**
-         * Constructor
-         */
-        RatHelpFormatter() {
-            super();
-            this.optionComparator = OptionCollection.OPTION_COMPARATOR;
-            this.setWidth(HELP_WIDTH);
+        builder.setAlignment(TextStyle.Alignment.LEFT);
+        styles.add(builder.get());
+
+        List<List<String>> rows = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        for (Option option : options) {
+            List<String> row = new ArrayList<>();
+            OptionFormatter formatter = helpFormatter.getOptionFormatter(option);
+            sb.setLength(0);
+            sb.append(formatter.getBothOpt());
+            if (option.hasArg()) {
+                sb.append(" ").append(formatter.getArgName());
+            }
+            row.add(sb.toString());
+            row.add(formatter.getSince());
+
+            // build the description
+            sb.setLength(0);
+            sb.append(option.isDeprecated() ? formatter.getDeprecated() : formatter.getDescription());
+             // check for multiple values
+            if (option.hasArgs()) {
+                sb.append(END_OF_OPTION_MSG);
+            }
+            // check for default value
+            Arg arg = Arg.findArg(option);
+            String defaultValue = arg == null ? null : arg.defaultValue();
+            if (defaultValue != null) {
+                sb.append(format(" (Default value = %s)", defaultValue));
+            }
+            row.add(sb.toString());
+            rows.add(row);
         }
 
-        /**
-         * Prints the help text.
-         * @param writer the writer to write to.
-         * @param cmdLineSyntax The command line syntax for the program.
-         * @param header Additional information to proceed the Options descriptions.
-         * @param options the Options to output help for.
-         * @param footer Additional information to follow the Options descriptions.
-         */
-        public void printHelp(final PrintWriter writer, final String cmdLineSyntax, final String header, final Options options, final String footer) {
-            if (StringUtils.isEmpty(cmdLineSyntax)) {
-                throw new IllegalArgumentException("cmdLineSyntax not provided");
-            }
-
-            helpFormatter.printUsage(writer, HELP_WIDTH, cmdLineSyntax);
-
-            if (header != null && !header.isEmpty()) {
-                helpFormatter.printWrapped(writer, HELP_WIDTH, header);
-            }
-            printOptions(writer, HELP_WIDTH, options, helpFormatter.getLeftPadding(), helpFormatter.getDescPadding());
-            if (footer != null && !footer.isEmpty()) {
-                helpFormatter.printWrapped(writer, helpFormatter.getWidth(), footer);
-            }
-        }
-
-        /**
-         * Renders an option into a string buffer.
-         * @param sb The StringBuffer to place the rendered Options into.
-         * @param width The number of characters to display per line
-         * @param options The command line Options
-         * @param leftPad the number of characters of padding to be prefixed to each line
-         * @param descPad the number of characters of padding to be prefixed to each description line
-         *
-         * @return the {@code sb} parameter with text appended.
-         */
-        protected StringBuffer renderOptions(final StringBuffer sb, final int width, final Options options, final int leftPad, final int descPad) {
-            final String lpad = createPadding(leftPad);
-            final String dpad = createPadding(descPad);
-            // first create list containing only <lpad>-a,--aaa where
-            // -a is opt and --aaa is long opt; in parallel look for
-            // the longest opt string this list will be then used to
-            // sort options ascending
-            int max = 0;
-            final List<StringBuffer> prefixList = new ArrayList<>();
-            final List<Option> optList = new ArrayList<>(options.getOptions());
-            optList.sort(helpFormatter.getOptionComparator());
-
-            for (final Option option : optList) {
-                final StringBuffer optBuf = new StringBuffer();
-                if (option.getOpt() == null) {
-                    optBuf.append(lpad).append("   ").append(getLongOptPrefix()).append(option.getLongOpt());
-                } else {
-                    optBuf.append(lpad).append(getOptPrefix()).append(option.getOpt());
-                    if (option.hasLongOpt()) {
-                        optBuf.append(',').append(getLongOptPrefix()).append(option.getLongOpt());
-                    }
-                }
-                if (option.hasArg()) {
-                    final String argName = option.getArgName();
-                    if (argName != null && argName.isEmpty()) {
-                        // if the option has a blank argname
-                        optBuf.append(' ');
-                    } else {
-                        optBuf.append(option.hasLongOpt() ? helpFormatter.getLongOptSeparator() : " ");
-                        optBuf.append("<").append(argName != null ? option.getArgName() : getArgName()).append(">");
-                    }
-                }
-                prefixList.add(optBuf);
-                max = Math.max(optBuf.length(), max);
-            }
-            int x = 0;
-            for (final Iterator<Option> it = optList.iterator(); it.hasNext();) {
-                final Option option = it.next();
-                final StringBuilder optBuf = new StringBuilder(prefixList.get(x++).toString());
-                if (optBuf.length() < max) {
-                    optBuf.append(createPadding(max - optBuf.length()));
-                }
-                optBuf.append(dpad);
-                final int nextLineTabStop = max + descPad;
-                // check for deprecation
-                if (option.isDeprecated()) {
-                    optBuf.append(DEPRECATED_MSG.apply(option).trim());
-                } else if (option.getDescription() != null) {
-                    optBuf.append(option.getDescription());
-                }
-                // check for multiple values
-                if (option.hasArgs()) {
-                    optBuf.append(END_OF_OPTION_MSG);
-                }
-                // check for default value
-                Arg arg = Arg.findArg(option);
-                String defaultValue = arg == null ? null : arg.defaultValue();
-                if (defaultValue != null) {
-                    optBuf.append(format(" (Default value = %s)", defaultValue));
-                }
-                renderWrappedText(sb, width, nextLineTabStop, optBuf.toString());
-                if (it.hasNext()) {
-                    sb.append(getNewLine());
-                }
-            }
-            return sb;
-        }
+        return TableDef.from("", styles, Arrays.asList("Options", "Since", "Description"), rows) ;
     }
 }

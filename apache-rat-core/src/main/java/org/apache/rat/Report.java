@@ -18,7 +18,9 @@
  */
 package org.apache.rat;
 
+import java.io.IOException;
 import org.apache.commons.cli.Options;
+import org.apache.rat.api.RatException;
 import org.apache.rat.help.Help;
 import org.apache.rat.utils.DefaultLog;
 
@@ -48,7 +50,11 @@ public final class Report {
      * @param opts The defined options.
      */
     private static void printUsage(final Options opts) {
-        new Help(System.out).printUsage(opts);
+        try {
+            new Help(System.out).printUsage(opts);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Report() {

@@ -21,16 +21,18 @@ package org.apache.rat.help;
 import static java.lang.String.format;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 
-import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.help.TableDef;
+import org.apache.commons.cli.help.TextStyle;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rat.ConfigurationException;
 import org.apache.rat.ReportConfiguration;
@@ -53,32 +55,16 @@ public final class Licenses extends AbstractHelp {
     private final ReportConfiguration config;
     /** The licenses in the report config */
     private final SortedSet<ILicense> licenses;
-    /** The formatter */
-    private final HelpFormatter formatter;
-    /** The writer to write to */
-    private final PrintWriter printWriter;
 
     /**
      * Constructor
      * @param config The configuration that contains the license information.
-     * @param writer the writer to write the report to.
+     * @param output the output to write the report to.
      */
-    public Licenses(final ReportConfiguration config, final Writer writer) {
+    public Licenses(final ReportConfiguration config, final Appendable output) {
+        super(output);
         this.config = config;
         this.licenses = config.getLicenses(LicenseFilter.ALL);
-        printWriter = new PrintWriter(writer);
-        formatter = HelpFormatter.builder().setShowDeprecated(false).setPrintWriter(printWriter).get();
-    }
-
-    /**
-     * Prints the text indented and wrapped
-     * @param indent the number of spaces to indent.
-     * @param text the text to write.
-     */
-    void print(final int indent, final String text) {
-        int leftMargin = indent * HELP_PADDING;
-        int tabStop = leftMargin + (HELP_PADDING / 2);
-        formatter.printWrapped(printWriter, HELP_WIDTH, tabStop, createPadding(leftMargin) + text);
     }
 
     /**
@@ -86,8 +72,42 @@ public final class Licenses extends AbstractHelp {
      * @throws IOException on output error.
      */
     public void printHelp() throws IOException {
-        print(0, format("Listing of licenses for %s", versionInfo));
+        serializer.writePara(format("Listing of licenses for %s", versionInfo));
         output();
+    }
+
+    void print(final int level, final String text) throws IOException {
+        TextStyle.Builder styleBuilder = new TextStyle.Builder(serializer.getStyleBuilder().get());
+        styleBuilder.setLeftPad(level * styleBuilder.getLeftPad());
+        serializer.printWrapped(text, styleBuilder.get());
+    }
+
+    private void printLicenses() throws IOException {
+        serializer.writeHeader(1, "LICENSES");
+        if (licenses.isEmpty()) {
+            serializer.writePara("  No licenses defined");
+        } else {
+            Description licenseDescription = DescriptionBuilder.build(licenses.first());
+            Collection<Description> licenseParams = licenseDescription.filterChildren(d -> d.getType() == ComponentType.PARAMETER);
+
+
+            serializer.writeTable(TableDef.from("Licenses have the following properties:",
+                    Arrays.asList(TextStyle.DEFAULT, TextStyle.DEFAULT),
+                    Arrays.asList("Name", "Description"),
+                    () -> {
+                        List<List<String>> rows = new ArrayList<>();
+                        for (Description param : licenseParams) {
+                            rows.add(Arrays.asList(param.getCommonName(), param.getDescription()));
+                        }
+                        return rows.iterator();
+                    }));
+
+            serializer.writePara("The defined licenses are:");
+
+            for (ILicense l : licenses) {
+                printObject(0, l);
+            }
+        }
     }
 
     /**
@@ -95,27 +115,8 @@ public final class Licenses extends AbstractHelp {
      * @throws IOException on error.
      */
     public void output() throws IOException {
+        printLicenses();
 
-        print(0, header("LICENSES"));
-
-        if (licenses.isEmpty()) {
-            print(0, "No licenses defined");
-        } else {
-            Description licenseDescription = DescriptionBuilder.build(licenses.first());
-            Collection<Description> licenseParams = licenseDescription.filterChildren(d -> d.getType() == ComponentType.PARAMETER);
-
-            print(0, format("Licenses have the following properties:%n"));
-
-            for (Description param : licenseParams) {
-                print(1, format("%s: %s%n", param.getCommonName(), param.getDescription()));
-            }
-
-            print(0, format("%nThe defined licenses are:%n"));
-            for (ILicense l : licenses) {
-                print(0, System.lineSeparator());
-                printObject(0, l);
-            }
-        }
         print(0, header("DEFINED MATCHERS"));
         SortedSet<Description> matchers = new TreeSet<>((d1, d2) -> d1.getCommonName().compareTo(d2.getCommonName()));
         for (Class<? extends AbstractBuilder> mClazz : MatcherBuilderTracker.instance().getClasses()) {
@@ -129,7 +130,7 @@ public final class Licenses extends AbstractHelp {
             }
         }
         for (Description description : matchers) {
-            print(0, format("%n%s: %s%n", description.getCommonName(), description.getDescription()));
+            print(0, format("%s: %s", description.getCommonName(), description.getDescription()));
             for (Description child : description.getChildren().values()) {
                 if (IHeaderMatcher.class.isAssignableFrom(child.getChildType())) {
                     if (child.isCollection()) {
@@ -147,7 +148,6 @@ public final class Licenses extends AbstractHelp {
         for (ILicenseFamily family : config.getLicenseFamilies(LicenseFilter.ALL)) {
             print(1, format("%s - %s%n", family.getFamilyCategory(), family.getFamilyName()));
         }
-        printWriter.flush();
     }
 
     /**
@@ -162,9 +162,9 @@ public final class Licenses extends AbstractHelp {
         }
         Description description = DescriptionBuilder.build(object);
         if (description == null) {
-            print(indent, format("Unknown Object of class: %s%n", object.getClass().getName()));
+            print(indent, format("Unknown Object of class: %s", object.getClass().getName()));
         } else {
-            print(indent, format("%s (%s)%n", description.getCommonName(), description.getDescription()));
+            print(indent, format("%s (%s)", description.getCommonName(), description.getDescription()));
             printChildren(indent + 1, object, description.getChildren());
         }
     }
@@ -195,7 +195,7 @@ public final class Licenses extends AbstractHelp {
             switch (d.getType()) {
                 case PARAMETER:
                     if (d.isCollection()) {
-                        print(indent, format("%s: %n", d.getCommonName()));
+                        print(indent, d.getCommonName());
                         try {
                             Collection<?> result = (Collection<?>) d.getter(parent.getClass()).invoke(parent);
                             for (Object o : result) {
