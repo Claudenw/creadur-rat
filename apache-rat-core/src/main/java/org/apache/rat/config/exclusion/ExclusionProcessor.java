@@ -26,14 +26,14 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 
-import org.apache.rat.config.exclusion.plexus.MatchPattern;
-import org.apache.rat.config.exclusion.plexus.MatchPatterns;
 import org.apache.rat.document.impl.DocumentName;
 import org.apache.rat.document.impl.DocumentNameMatcher;
 import org.apache.rat.document.impl.DocumentNameMatcherSupplier;
 import org.apache.rat.document.impl.TraceableDocumentNameMatcher;
 import org.apache.rat.utils.DefaultLog;
 import org.apache.rat.utils.iterator.WrappedIterator;
+import org.codehaus.plexus.util.MatchPattern;
+import org.codehaus.plexus.util.MatchPatterns;
 
 import static java.lang.String.format;
 
@@ -264,7 +264,19 @@ public class ExclusionProcessor {
      * @return The matcher
      */
     TraceableDocumentNameMatcher makeMatcher(final Supplier<String> name, final MatchPatterns patterns, final DocumentName basedir) {
-        return TraceableDocumentNameMatcher.make(name,
-                p -> patterns.matches(p.getName(), MatchPattern.tokenizePathToString(p.getName(), basedir.getDirectorySeparator()), basedir.isCaseSensitive()));
+        DocumentNameMatcher dnm = new DocumentNameMatcher() {
+            @Override
+            public boolean matches(DocumentName documentName) {
+                return patterns.matches(documentName.getName(),
+                        MatchPattern.tokenizePathToString(documentName.getName(), basedir.getDirectorySeparator()),
+                        basedir.isCaseSensitive());
+            }
+
+            @Override
+            public String toString() {
+                return "["+String.join(", ", patterns.getSources())+"]";
+            }
+        };
+        return TraceableDocumentNameMatcher.make(name, dnm);
     }
 }

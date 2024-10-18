@@ -34,12 +34,12 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rat.ConfigurationException;
-import org.apache.rat.config.exclusion.plexus.MatchPatterns;
-import org.apache.rat.config.exclusion.plexus.SelectorUtils;
 import org.apache.rat.document.impl.DocumentName;
 import org.apache.rat.document.impl.DocumentNameMatcher;
 import org.apache.rat.utils.iterator.ExtendedIterator;
 import org.apache.rat.utils.iterator.WrappedIterator;
+import org.codehaus.plexus.util.MatchPatterns;
+import org.codehaus.plexus.util.SelectorUtils;
 
 import static java.lang.String.format;
 

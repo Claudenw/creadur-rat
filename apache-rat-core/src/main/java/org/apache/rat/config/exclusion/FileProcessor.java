@@ -22,10 +22,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
-import org.apache.rat.config.exclusion.plexus.MatchPattern;
-import org.apache.rat.config.exclusion.plexus.SelectorUtils;
 import org.apache.rat.document.impl.DocumentName;
 import org.apache.rat.utils.iterator.WrappedIterator;
+import org.codehaus.plexus.util.MatchPattern;
+import org.codehaus.plexus.util.SelectorUtils;
 
 /**
  * An interface that defines the FileProcessor. The file processor reads the file specified in the DocumentName.
