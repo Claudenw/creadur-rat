@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -69,7 +69,7 @@ public final class CodeGenerator {
 
     /**
      * private constructor.
-     * @param baseDirectory The base source directory.
+     * @param baseDirectory The base source directory the org/apache/rat/maven directory will be created here if necessary.
      */
     CodeGenerator(final String baseDirectory) {
         this.baseDirectory = baseDirectory;
@@ -162,7 +162,7 @@ public final class CodeGenerator {
     }
 
     /**
-     * Gets the argument descrption for the method in {@code AbstractMaven.java}.
+     * Gets the argument description for the method in {@code AbstractMaven.java}.
      * @param mavenOption the maven option generating the method.
      * @param desc the description of the argument.
      * @return the argument description for the method in {@code AbstractMaven.java}.
@@ -175,17 +175,6 @@ public final class CodeGenerator {
             return "The state";
         }
     }
-
-//    /**
-//     * Gets method name for the method in {@code AbstractMaven.java}.
-//     * @param mavenOption the maven option generating the method.
-//     * @return the method name description for the method in {@code AbstractMaven.java}.
-//     */
-//    private String createMethodName(final MavenOption mavenOption) {
-//        String fname = mavenOption.getMethodName();
-//        return (mavenOption.hasArgs() && !(fname.endsWith("s") || fname.endsWith("Approved") || fname.endsWith("Denied"))) ?
-//                fname + "s" : fname;
-//    }
 
     /**
      * Gets parameter annotation for the method in {@code AbstractMaven.java}.

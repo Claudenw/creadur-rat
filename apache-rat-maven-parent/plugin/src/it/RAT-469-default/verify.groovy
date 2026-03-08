@@ -21,17 +21,18 @@ content = new File(basedir, 'build.log').text
 assert content.contains('BUILD SUCCESS')
 // should be DEBUG because we are running with a -X option.
 assert content.contains('[DEBUG] Including patterns: pom.xml') // explicit inclusion worked
-assert content.contains('[DEBUG] Processing exclude file from STANDARD_SCMS.') // default exclusions worked
+assert content.contains('[DEBUG] Excluding STANDARD_SCMS collection.') // default exclusions worked
 assert ! content.contains('[WARNING] No resources included')
 
 // Report is in apache-rat-plugin/target/invoker-reports
 report = new File(basedir, 'target/rat.txt').text
 assert TextUtils.isMatching("^  /verify.groovy\\s+S ", report)
 assert TextUtils.isMatching("^! /pom.xml\\s+S ", report)
+assert TextUtils.isMatching("^  /invoker.properties\\s+S ", report)
 
 assert report.contains('Unapproved:         1')
 assert report.contains('GPL  : 1')
-assert report.contains('    GPL      GPL3          GNU General Public License V3.0')
+assert report.contains('    GPL      GPL3          GNU General Public License V3.0 (Unapproved)')
 
 assert report.contains('AL       AL2.0         Apache License 2.0')
 assert report.contains('Approved:           2')

@@ -59,10 +59,7 @@ public final class ReporterOptionsTest {
 
     private static final OptionTestDataProvider optionTestDataProvider = new OptionTestDataProvider();
     private final OptionCollectionParser collectionParser = new OptionCollectionParser(new BaseOptionCollection());
-    @BeforeEach
-    void setup() {
-        ReporterOptionsProvider.sourceDir = null;
-    }
+
 
     static Stream<Arguments> getTestData() {
         return optionTestDataProvider.getOptionTests(new BaseOptionCollection()).stream().map(testData ->

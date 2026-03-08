@@ -26,7 +26,7 @@ import org.apache.rat.utils.CasedString;
 import static java.lang.String.format;
 
 /**
- * A representation of a CLI option as a Maven option
+ * A representation of a Maven option based on a CLI option.
  */
 public final class MavenOption extends AbstractOption<MavenOption> {
     /** The cased string version of the name */
@@ -47,12 +47,17 @@ public final class MavenOption extends AbstractOption<MavenOption> {
         return getName();
     }
 
+    /**
+     * Gets the method name for this option.
+     * @return the method name for this option.
+     */
     public String getMethodName() {
         return "set" + casedName.toCase(CasedString.StringCase.PASCAL);
     }
 
     @Override
     protected String cleanupName(final Option option) {
+        // only parse the option if we need to.
         if (option == this.option) {
             return format("<%s>", this.name);
         }
@@ -63,7 +68,6 @@ public final class MavenOption extends AbstractOption<MavenOption> {
     public String getText() {
         return cleanupName(option);
     }
-
 
     @Override
     public String getExample() {
@@ -76,6 +80,11 @@ public final class MavenOption extends AbstractOption<MavenOption> {
             return getExample("");
     }
 
+    /**
+     * Create example text for the option.
+     * @param args the example arguments for the option.
+     * @return a formatted option.
+     */
     public String getExample(final String... args) {
         StringBuilder sb = new StringBuilder(String.format("<%s>", getName()));
         if (hasArg()) {

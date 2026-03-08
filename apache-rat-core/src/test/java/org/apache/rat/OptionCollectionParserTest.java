@@ -58,15 +58,15 @@ public class OptionCollectionParserTest {
     private static final OptionTestDataProvider optionTestDataProvider = new OptionTestDataProvider();
 
     private final OptionCollectionParser collectionParser = new OptionCollectionParser(new BaseOptionCollection());
-    /**
-     * This method is a known workaround for
-     * {@link <a href="https://github.com/junit-team/junit5/issues/2811">junit 5 issue #2811</a> }.
-     */
-    @AfterEach
-    @EnabledOnOs(OS.WINDOWS)
-    void cleanUp() {
-        System.gc();
-    }
+//    /**
+//     * This method is a known workaround for
+//     * {@link <a href="https://github.com/junit-team/junit5/issues/2811">junit 5 issue #2811</a> }.
+//     */
+//    @AfterEach
+//    @EnabledOnOs(OS.WINDOWS)
+//    void cleanUp() {
+//        System.gc();
+//    }
 
     static Stream<Arguments> getTestData() {
         return optionTestDataProvider.getOptionTests(new BaseOptionCollection()).stream().map(testData ->
@@ -132,58 +132,4 @@ public class OptionCollectionParserTest {
             fail(e.getMessage(), e);
         }
     }
-
-//    /**
-//     * A class to provide the Options and tests to the testOptionsUpdateConfig.
-//     */
-//    static class CliOptionsProvider extends AbstractConfigurationOptionsProvider implements ArgumentsProvider {
-//
-//
-//        @Override
-//        public void helpTest() {
-//            String[] args = { OptionFormatter.longOpt(OptionCollection.HELP) };
-//            try {
-//                ReportConfiguration config = OptionCollection.parseCommands(testPath.toFile(), args, o -> helpCalled.set(true), true);
-//                assertThat(config).as("Should not have config").isNull();
-//                assertThat(helpCalled.get()).as("Help was not called").isTrue();
-//            } catch (IOException | ParseException e) {
-//                fail(e.getMessage());
-//            }
-//        }
-//
-//        /**
-//         * Constructor. Sets the baseDir and loads the testMap.
-//         */
-//        public CliOptionsProvider() {
-//            super(Collections.emptyList(), testPath.toFile());
-//        }
-//
-//        /**
-//         * Generate a ReportConfiguration from a set of arguments.
-//         * Forces the {@code helpCalled} flag to be reset.
-//         * @param args the arguments.
-//         * @return A ReportConfiguration
-//         * @throws IOException on critical error.
-//         */
-//        protected final ReportConfiguration generateConfig(List<Pair<Option, String[]>> args) throws IOException {
-//            helpCalled.set(false);
-//            List<String> sArgs = new ArrayList<>();
-//            for (Pair<Option, String[]> pair : args) {
-//                if (pair.getKey() != null) {
-//                    sArgs.add("--" + pair.getKey().getLongOpt());
-//                    String[] oArgs = pair.getValue();
-//                    if (oArgs != null) {
-//                        Collections.addAll(sArgs, oArgs);
-//                    }
-//                }
-//            }
-//            try {
-//                ReportConfiguration config = OptionCollection.parseCommands(testPath.toFile(), sArgs.toArray(new String[0]), o -> helpCalled.set(true), true);
-//                assertThat(helpCalled.get()).as("Help was called").isFalse();
-//                return config;
-//            } catch (ParseException e) {
-//                throw new IOException(e);
-//            }
-//        }
-//    }
 }

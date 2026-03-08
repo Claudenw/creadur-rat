@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.rat.maven;
 
 import java.io.File;
@@ -36,19 +54,23 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Executes the dynamic tests provided by the ReportTestDataProvider.
+ */
 public class MavenTestDynIT {
-
 
     private final TestGenerator testGenerator;
     private final MavenOptionCollection optionCollection;
-    private List<TestData> testDataList;
     private final Map<String, Consumer<ValidatorData>> validatorEditors;
 
+    /**
+     * Constructor.
+     * @throws IOException on IO Exception,
+     */
     public MavenTestDynIT() throws IOException {
         testGenerator = new TestGenerator();
         optionCollection = new MavenOptionCollection();
         validatorEditors = new HashMap<>();
-        Set<TestData> testDataList = new ReportTestDataProvider().getOptionTests(optionCollection);
         populateValidatorEditors();
     }
 
@@ -97,15 +119,10 @@ public class MavenTestDynIT {
         });
         validatorEditors.put("config_DefaultTest", stdApproved);
 
-//
-//        //validatorEditors.put("configuration-no-defaults", )
-
-        /* "/target" is excluded by default so the IGNORED count needs to be modified */
         validatorEditors.put("exclude", stdIgnored);
         validatorEditors.put("exclude-file", stdIgnored);
         validatorEditors.put("excludeFile_DefaultTest", stdIgnored);
         validatorEditors.put("exclude_DefaultTest", stdIgnored);
-//        //validatorEditors.put("help-licenses/stdOut", )
         validatorEditors.put("include", stdIgnored);
         validatorEditors.put("include_DefaultTest", stdIgnored);
         validatorEditors.put("includes-file", stdIgnored);
@@ -125,7 +142,6 @@ public class MavenTestDynIT {
         validatorEditors.put("input-include-std/hidden_dir", stdIgnored);
         validatorEditors.put("input-include-std/hidden_file", stdIgnored);
         validatorEditors.put("input-include-std/misc", stdIgnored);
-        //validatorEditors.put("input-source", stdIgnored);
         validatorEditors.put("inputExcludeFile_DefaultTest", stdIgnored);
         validatorEditors.put("inputExcludeParsedScm_DefaultTest", stdIgnored);
         validatorEditors.put("inputExcludeSize_DefaultTest", stdIgnored);
@@ -174,10 +190,14 @@ public class MavenTestDynIT {
 
     }
 
-    private List<TestData> testsFor(Option option) {
-        return testDataList.stream().filter(td -> td.getOption() == null ? option == null : td.getOption().equals(option)).toList();
-    }
-
+    /**
+     * Runs the test for the specified TestData.
+     * @param testData the test to run.
+     * @param testPath the path to create file etc. in .
+     * @throws IOException on IO Error.
+     * @throws MavenInvocationException on Maven invocation error.
+     * @throws RatException on RAT error.
+     */
     @ParameterizedTest
     @MethodSource("testData")
     void optionTest(TestData testData, @TempDir Path testPath) throws IOException, MavenInvocationException, RatException {
@@ -213,8 +233,6 @@ public class MavenTestDynIT {
                     .filter(s -> s.contains("[ERROR]")).toList();
             assertThat(entries).hasSize(1);
         } else {
-            //assertThat(result.getExitCode()).as("Result of Maven execution").isEqualTo(0);
-            Path ratPath = baseDir.resolve("target/RAT");
             DocumentName baseName = DocumentName.builder(baseDir.toFile()).build();
             Reporter.Output output = Reporter.Output.builder()
                     .configuration("target/RAT/configuration.xml", baseName)
@@ -232,10 +250,12 @@ public class MavenTestDynIT {
         }
     }
 
+    /**
+     * The static class to create retrieve the tests for the MavenOptions.
+     * @return the collection of Tests for the supported options.
+     */
     static Collection<TestData> testData() {
         MavenOptionCollection optionCollection = new MavenOptionCollection();
-        List<TestData> lst = new ArrayList<>(new ReportTestDataProvider().getOptionTests(optionCollection));
-        return lst.subList(53, lst.size());
-       // return new ReportTestDataProvider().getOptionTests(optionCollection);
+        return new ReportTestDataProvider().getOptionTests(optionCollection);
     }
 }
