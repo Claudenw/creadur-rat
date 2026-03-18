@@ -46,7 +46,7 @@ import org.apache.rat.help.Licenses;
 import org.apache.rat.license.LicenseSetFactory;
 import org.apache.rat.report.IReportable;
 import org.apache.rat.report.claim.ClaimStatistic;
-import org.apache.rat.ui.AbstractOptionCollection;
+import org.apache.rat.ui.UIOptionCollection;
 import org.apache.rat.utils.DefaultLog;
 import org.apache.rat.utils.Log.Level;
 import org.apache.rat.walker.ArchiveWalker;
@@ -63,10 +63,10 @@ import static java.lang.String.format;
 @SuppressFBWarnings("EI_EXPOSE_REP2")
 public final class OptionCollectionParser {
     /** The OptionCollection that we are working with */
-    private final AbstractOptionCollection<?> optionCollection;
+    private final UIOptionCollection<?> uiOptionCollection;
 
-    public OptionCollectionParser(final AbstractOptionCollection<?> optionCollection) {
-        this.optionCollection = optionCollection;
+    public OptionCollectionParser(final UIOptionCollection<?> optionCollection) {
+        this.uiOptionCollection = optionCollection;
     }
 
     /** The Option comparator to sort the help */
@@ -92,7 +92,7 @@ public final class OptionCollectionParser {
      */
     public ArgumentContext parseCommands(final File workingDirectory, final String[] args)
             throws IOException, ParseException {
-        return parseCommands(workingDirectory, args, optionCollection.getOptions());
+        return parseCommands(workingDirectory, args, uiOptionCollection.getOptions());
     }
 
     /**
@@ -128,13 +128,11 @@ public final class OptionCollectionParser {
                                                                        final Options options) throws IOException, ParseException {
 
         CommandLine commandLine = parseCommandLine(options, args);
-
-        Arg.processLogLevel(commandLine);
-
         ArgumentContext argumentContext = new ArgumentContext(workingDirectory, commandLine);
+        Arg.processLogLevel(argumentContext, uiOptionCollection);
         populateConfiguration(argumentContext);
-        if (commandLine.hasOption(Arg.HELP_LICENSES.option())) {
-            new Licenses(argumentContext.getConfiguration(),
+        if (uiOptionCollection.isSelected(Arg.HELP_LICENSES)) {
+            new Licenses(uiOptionCollection, argumentContext.getConfiguration(),
                     new PrintWriter(argumentContext.getConfiguration().getOutput().get(),
                             false, StandardCharsets.UTF_8)).printHelp();
         }
@@ -149,8 +147,8 @@ public final class OptionCollectionParser {
      * @param argumentContext The context to execute in.
      * @return a ReportConfiguration
      */
-    ReportConfiguration populateConfiguration(final ArgumentContext argumentContext) {
-        argumentContext.processArgs();
+    private ReportConfiguration populateConfiguration(final ArgumentContext argumentContext) {
+        argumentContext.processArgs(uiOptionCollection);
         final ReportConfiguration configuration = argumentContext.getConfiguration();
         final CommandLine commandLine = argumentContext.getCommandLine();
         if (!configuration.hasSource()) {

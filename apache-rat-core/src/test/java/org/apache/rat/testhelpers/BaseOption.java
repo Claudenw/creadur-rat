@@ -1,9 +1,9 @@
 package org.apache.rat.testhelpers;
 
-import org.apache.rat.ui.AbstractOption;
 import org.apache.rat.ui.ArgumentTracker;
+import org.apache.rat.ui.UIOption;
 
-public final class BaseOption  extends AbstractOption<BaseOption> {
+public final class BaseOption  extends UIOption<BaseOption> {
 
     /**
      * Constructor.

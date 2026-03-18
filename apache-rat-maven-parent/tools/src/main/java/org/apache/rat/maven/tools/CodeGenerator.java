@@ -58,8 +58,6 @@ public final class CodeGenerator {
     private static final String SYNTAX = String.format("java -cp ... %s [options]", CodeGenerator.class.getName());
     /** The package name for this AbstractMaven file */
     private final CasedString packageName = new CasedString(CasedString.StringCase.DOT, "org.apache.rat.maven");
-    /** The maven option collection */
-    private final MavenOptionCollection mavenOptionCollection = new MavenOptionCollection();
     /** The base source directory */
     private final String baseDirectory;
     /** The template for the methods within {@code AbstractMaven}. */
@@ -206,13 +204,12 @@ public final class CodeGenerator {
     Map<MavenOption, String> gatherMethods() {
         final Map<MavenOption, String> methods = new TreeMap<>(Comparator.comparing(MavenOption::getName));
         final VelocityContext context = new VelocityContext();
-        mavenOptionCollection.getMappedOptions().forEach(mavenOption -> {
+        MavenOptionCollection.INSTANCE.getMappedOptions().forEach(mavenOption -> {
             final StringWriter methodWriter = new StringWriter();
             context.put("option", mavenOption);
             String desc = createDesc(mavenOption);
             context.put("desc", desc);
             context.put("argDesc", createArgDesc(mavenOption, desc));
-            context.put("fname", mavenOption.getMethodName());
             context.put("parameterAnnotation", createParameterAnnotation(mavenOption, mavenOption.getName()));
             context.put("args", (mavenOption.hasArg() ? "String" : "boolean") + (mavenOption.hasArgs() ? "[]" : ""));
             methodTemplate.merge(context, methodWriter);

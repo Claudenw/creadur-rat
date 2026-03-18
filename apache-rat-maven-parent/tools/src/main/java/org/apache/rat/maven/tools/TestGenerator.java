@@ -190,7 +190,7 @@ public final class TestGenerator {
         }
     }
 
-    public String buildPom(final MavenOptionCollection optionCollection, final TestData testData) {
+    public String buildPom(final TestData testData) {
         final VelocityContext context =  new VelocityContext();
         CasedString casedTestName = new CasedString(CasedString.StringCase.CAMEL, testData.getClassName());
         context.put("artifactId", casedTestName.toCase(CasedString.StringCase.KEBAB).toLowerCase(Locale.ROOT));
@@ -200,7 +200,7 @@ public final class TestGenerator {
         StringBuilder configuration = new StringBuilder();
         for (Pair<Option, String[]> pair : testData.getArgs()) {
             if (pair.getKey() != null) {
-                MavenOption option = optionCollection.getMappedOption(pair.getKey());
+                MavenOption option = MavenOptionCollection.INSTANCE.getMappedOption(pair.getKey());
                 configuration.append(option.getExample(pair.getRight())).append(System.lineSeparator());
             }
         }
@@ -218,11 +218,10 @@ public final class TestGenerator {
      * @throws IOException on IO error
      */
     private String writeTestPoms(final VelocityContext context) throws IOException {
-        MavenOptionCollection optionCollection = new MavenOptionCollection();
         StringWriter funcCode = new StringWriter();
 
-        for (final TestData testData : new ReportTestDataProvider().getOptionTests(optionCollection)) {
-            String config = buildPom(optionCollection, testData);
+        for (final TestData testData : new ReportTestDataProvider().getOptionTests(MavenOptionCollection.INSTANCE)) {
+            //String config = buildPom(testData);
             //context.put("option", testData.getOption());
             // relative directory to test resources.
             Path testDir = Paths.get("src/test/resources").resolve(packageName.toCase(CasedString.StringCase.SLASH))
@@ -241,7 +240,7 @@ public final class TestGenerator {
 
             File pomFile = testPath.resolve("pom.xml").toFile();
             try (FileWriter writer = new FileWriter(pomFile, StandardCharsets.UTF_8)) {
-                writer.append(buildPom(optionCollection, testData));
+                writer.append(buildPom(testData));
             }
         }
         return funcCode.toString();

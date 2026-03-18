@@ -29,7 +29,7 @@
     @Deprecated
 #end
     ${parameterAnnotation}
-    public void ${fname}(final ${args} ${option.getName}) {
+    public void ${option.getMethodName}(final ${args} ${option.getName}) {
 #if (${option.hasArg})
   #if (${option.hasArgs})
         argumentTracker.addArg("${option.keyValue}", ${option.getName});

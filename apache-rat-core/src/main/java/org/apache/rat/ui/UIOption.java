@@ -36,7 +36,7 @@ import static java.lang.String.format;
  * In this context UI option means an option expressed in the specific UI.
  * @param <T> the concrete implementation of AbstractOption.
  */
-public abstract class AbstractOption<T extends AbstractOption<T>> {
+public abstract class UIOption<T extends UIOption<T>> {
     /** The pattern to match CLI options in text */
     protected static final Pattern PATTERN = Pattern.compile("-(-[a-z0-9]+)+");
     /** The actual UI-specific name for the option */
@@ -46,7 +46,7 @@ public abstract class AbstractOption<T extends AbstractOption<T>> {
     /** The argument type for this option */
     protected final OptionCollectionParser.ArgumentType argumentType;
     /** The AbstractOptionCollection associated with this AbstractOption */
-    protected final AbstractOptionCollection<T> optionCollection;
+    protected final UIOptionCollection<T> optionCollection;
 
     /**
      * Constructor.
@@ -54,7 +54,7 @@ public abstract class AbstractOption<T extends AbstractOption<T>> {
      * @param option The CLI option
      * @param name the UI-specific name for the option.
      */
-    protected <C extends AbstractOptionCollection<T>> AbstractOption(final C optionCollection, final Option option, final String name) {
+    protected <C extends UIOptionCollection<T>> UIOption(final C optionCollection, final Option option, final String name) {
         this.optionCollection = optionCollection;
         this.option = option;
         this.name = name;
@@ -68,7 +68,7 @@ public abstract class AbstractOption<T extends AbstractOption<T>> {
      * Gets the AbstractOptionCollection that this option is a member of.
      * @return the AbstractOptionCollection that this option is a member of.
      */
-    public final AbstractOptionCollection<T> getOptionCollection() {
+    public final UIOptionCollection<T> getOptionCollection() {
         return optionCollection;
     }
 
@@ -85,7 +85,7 @@ public abstract class AbstractOption<T extends AbstractOption<T>> {
      * @return default value or {@code null} if no argument given.
      */
     public final String getDefaultValue() {
-        return optionCollection.getDefaultValue(option);
+        return optionCollection.defaultValue(option);
     }
 
     /**
@@ -204,14 +204,6 @@ public abstract class AbstractOption<T extends AbstractOption<T>> {
      */
     public final boolean hasArgs() {
         return option.hasArgs();
-    }
-
-    /**
-     * Returns the number of arguments.
-     * @return The number of arguments.
-     */
-    public final int argCount() {
-        return option.getArgs();
     }
 
     /**

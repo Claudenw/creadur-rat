@@ -36,7 +36,7 @@ public class CLIProvider implements UIProvider {
 
         @Override
         public CLIOptionCollection getOptionCollection() {
-            return new CLIOptionCollection();
+            return CLIOptionCollection.INSTANCE;
         }
     }
 }

@@ -35,11 +35,11 @@ import java.io.File;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ArgTests {
+    private BaseOptionCollection optionCollection = BaseOptionCollection.builder().build();
 
     private CommandLine createCommandLine(String[] args) throws ParseException {
-        Options opts = new BaseOptionCollection().getOptions();
         return DefaultParser.builder().setDeprecatedHandler(DeprecationReporter.getLogReporter())
-                .setAllowPartialMatching(true).build().parse(opts, args);
+                .setAllowPartialMatching(true).build().parse(optionCollection.getOptions(), args);
     }
 
     @ParameterizedTest(name = "{0}")
@@ -58,7 +58,7 @@ public class ArgTests {
         CommandLine commandLine = createCommandLine(new String[] {"--output-file", fileName});
         OutputFileConfig configuration = new OutputFileConfig();
         ArgumentContext ctxt = new ArgumentContext(new File("."), configuration, commandLine);
-        Arg.processArgs(ctxt);
+        Arg.processArgs(ctxt, optionCollection);
         assertThat(configuration.actual.getAbsolutePath()).isEqualTo(expected.getCanonicalPath());
     }
 }

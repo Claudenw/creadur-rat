@@ -39,7 +39,7 @@ import static org.apache.rat.OptionCollectionParser.ArgumentType.NONE;
  * Generates the ${code org.apache.rat.maven.AbstractMaven} source code.
  * @param <T> The concrete implementation of the AbstractOption.
  */
-public abstract class AbstractCodeGenerator<T extends AbstractOption<?>> {
+public abstract class AbstractCodeGenerator<T extends UIOption<?>> {
     /** The base source directory */
     protected final String baseDirectory;
     /** the velocity engine to generate files with */

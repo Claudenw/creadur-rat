@@ -58,11 +58,10 @@ public final class ReporterOptionsTest {
     static Path testPath;
 
     private static final OptionTestDataProvider optionTestDataProvider = new OptionTestDataProvider();
-    private final OptionCollectionParser collectionParser = new OptionCollectionParser(new BaseOptionCollection());
-
+    private final OptionCollectionParser collectionParser = new OptionCollectionParser(BaseOptionCollection.builder().build());
 
     static Stream<Arguments> getTestData() {
-        return optionTestDataProvider.getOptionTests(new BaseOptionCollection()).stream().map(testData ->
+        return optionTestDataProvider.getOptionTests(BaseOptionCollection.builder().build()).stream().map(testData ->
                 Arguments.of(testData.getTestName(), testData));
     }
 

@@ -132,9 +132,7 @@ public abstract class AbstractRatMojo extends AbstractMaven {
      */
     protected void removeKey(final Arg arg) {
         for (Option option : arg.group().getOptions()) {
-            if (option.getLongOpt() != null) {
-                argumentTracker.removeArg(option.getLongOpt());
-            }
+            argumentTracker.removeArg(MavenOptionCollection.INSTANCE.getMappedOption(option));
         }
     }
 
@@ -231,7 +229,7 @@ public abstract class AbstractRatMojo extends AbstractMaven {
 
     protected ReportConfiguration getConfiguration() throws MojoExecutionException {
         Log log = DefaultLog.getInstance();
-        OptionCollectionParser optionParser = new OptionCollectionParser(mavenOptionCollection);
+        OptionCollectionParser optionParser = new OptionCollectionParser(MavenOptionCollection.INSTANCE);
         if (reportConfiguration == null) {
             try {
                 if (getLog().isDebugEnabled()) {
@@ -251,7 +249,8 @@ public abstract class AbstractRatMojo extends AbstractMaven {
                             ctxt.getConfiguration().getDocumentExcluder(dirName))));
                 }
                 if (helpLicenses) {
-                    new org.apache.rat.help.Licenses(ctxt.getConfiguration(), new PrintWriter(log.asWriter())).printHelp();
+                    new org.apache.rat.help.Licenses(MavenOptionCollection.INSTANCE,
+                            ctxt.getConfiguration(), new PrintWriter(log.asWriter())).printHelp();
                 }
                 reportConfiguration = ctxt.getConfiguration();
             } catch (IOException | ParseException e) {

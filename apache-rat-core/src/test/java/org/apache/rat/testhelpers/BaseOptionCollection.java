@@ -7,41 +7,31 @@ import java.util.Map;
 import java.util.function.Function;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rat.ui.AbstractOptionCollection;
+import org.apache.rat.ui.UIOptionCollection;
 
 /**
  * An implementation of AbstractOptionCollection for testing.
  */
-public final class BaseOptionCollection extends AbstractOptionCollection<BaseOption> {
-    private final Map<Option, String> defaultOverrides = new HashMap<>();
-
-    /**
-     * Constructs a BaseOptionCollection without unsupportedOptions.
-     */
-    public BaseOptionCollection() {
-        this(Collections.emptyList());
-    }
-
+public final class BaseOptionCollection extends UIOptionCollection<BaseOption> {
     /**
      * Constructs a BaseOptionCollection with unsupportedOptions.
      */
-    public BaseOptionCollection(Collection<Option> unsupportedOptions) {
-        super(unsupportedOptions, new Options());
+    private BaseOptionCollection(final Builder builder) {
+        super(builder);
     }
 
-    @Override
-    protected Function<Option, BaseOption> getMapper() {
-        return option -> new BaseOption(this, option);
+    public static Builder builder() {
+        return new Builder();
     }
+    public static final class Builder extends UIOptionCollection.Builder<BaseOption, Builder> {
+        private Builder() {
+            super();
+            mapper((collection,option) -> new BaseOption((BaseOptionCollection) collection, option));
+        }
 
-
-    @Override
-    public Map<Option, String> defaultOverrides() {
-        return defaultOverrides;
-    }
-
-    @Override
-    public void addOverride(Option option, String value) {
-        defaultOverrides.put(option, value);
+        @Override
+        public BaseOptionCollection build() {
+            return new BaseOptionCollection(this);
+        }
     }
 }

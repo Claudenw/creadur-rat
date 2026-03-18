@@ -43,8 +43,8 @@ import org.apache.rat.configuration.MatcherBuilderTracker;
 import org.apache.rat.help.AbstractHelp;
 import org.apache.rat.license.ILicense;
 import org.apache.rat.license.LicenseSetFactory;
-import org.apache.rat.ui.AbstractOption;
 import org.apache.rat.ui.UI;
+import org.apache.rat.ui.UIOption;
 import org.apache.rat.ui.spi.UIProvider;
 import org.apache.velocity.tools.config.DefaultKey;
 import org.apache.velocity.tools.config.ValidScope;
@@ -103,7 +103,7 @@ public class RatTool {
      * @param name The name of the UI client.
      * @return a map client option name to UI Option.
      */
-    public <T extends AbstractOption<T>> Map<String, T> options(final String name) {
+    public <T extends UIOption<T>> Map<String, T> options(final String name) {
         UI<T> ui = (UI<T>) uiMap.get(name);
         return ui.getOptionCollection().getOptionMap();
     }

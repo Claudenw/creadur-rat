@@ -33,11 +33,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class HelpTest {
-    private CLIOptionCollection cliCollection = new CLIOptionCollection();
 
     @Test
     public void verifyAllOptionsListed() {
-        Options opts = cliCollection.getOptions();
+        Options opts = CLIOptionCollection.INSTANCE.getOptions();
         StringWriter out = new StringWriter();
         new Help(out).printUsage(opts);
 
@@ -57,7 +56,7 @@ public class HelpTest {
 
     @Test
     public void verifyArgumentsListed() {
-        Options opts = cliCollection.getOptions();
+        Options opts = CLIOptionCollection.INSTANCE.getOptions();
         Set<String> argTypes = Arrays.stream(OptionCollectionParser.ArgumentType.values()).map(OptionCollectionParser.ArgumentType::getDisplayName).collect(Collectors.toSet());
         StringWriter out = new StringWriter();
         new Help(out).printUsage(opts);

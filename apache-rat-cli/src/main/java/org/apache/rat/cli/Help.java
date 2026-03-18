@@ -53,7 +53,7 @@ public class Help extends AbstractHelp {
      * @param writer the writer to write to.
      */
     public Help(final Writer writer) {
-        super();
+        super(CLIOptionCollection.INSTANCE);
         this.writer = writer instanceof PrintWriter ? (PrintWriter) writer : new PrintWriter(writer);
     }
 

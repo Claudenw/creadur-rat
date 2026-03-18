@@ -20,7 +20,8 @@ package org.apache.rat.maven;
 
 import org.apache.commons.cli.Option;
 import org.apache.commons.text.WordUtils;
-import org.apache.rat.ui.AbstractOption;
+import org.apache.rat.ui.UIOption;
+import org.apache.rat.ui.UIOptionCollection;
 import org.apache.rat.utils.CasedString;
 
 import static java.lang.String.format;
@@ -28,7 +29,7 @@ import static java.lang.String.format;
 /**
  * A representation of a Maven option based on a CLI option.
  */
-public final class MavenOption extends AbstractOption<MavenOption> {
+public final class MavenOption extends UIOption<MavenOption> {
     /** The cased string version of the name */
     private final CasedString casedName;
 
@@ -37,7 +38,7 @@ public final class MavenOption extends AbstractOption<MavenOption> {
      *
      * @param option The CLI option
      */
-    MavenOption(final MavenOptionCollection collection, final Option option, final CasedString casedName) {
+    MavenOption(final UIOptionCollection<MavenOption> collection, final Option option, final CasedString casedName) {
         super(collection, option, casedName.toCase(CasedString.StringCase.CAMEL));
         this.casedName = casedName;
     }

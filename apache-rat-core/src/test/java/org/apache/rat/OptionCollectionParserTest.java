@@ -57,7 +57,7 @@ public class OptionCollectionParserTest {
 
     private static final OptionTestDataProvider optionTestDataProvider = new OptionTestDataProvider();
 
-    private final OptionCollectionParser collectionParser = new OptionCollectionParser(new BaseOptionCollection());
+    private final OptionCollectionParser collectionParser = new OptionCollectionParser(BaseOptionCollection.builder().build());
 //    /**
 //     * This method is a known workaround for
 //     * {@link <a href="https://github.com/junit-team/junit5/issues/2811">junit 5 issue #2811</a> }.
@@ -69,7 +69,7 @@ public class OptionCollectionParserTest {
 //    }
 
     static Stream<Arguments> getTestData() {
-        return optionTestDataProvider.getOptionTests(new BaseOptionCollection()).stream().map(testData ->
+        return optionTestDataProvider.getOptionTests(BaseOptionCollection.builder().build()).stream().map(testData ->
                 Arguments.of(testData.getTestName(), testData));
     }
 
@@ -96,13 +96,10 @@ public class OptionCollectionParserTest {
     }
 
     @Test
-    public void testDefaultConfiguration() throws ParseException {
+    public void testDefaultConfiguration() throws ParseException, IOException {
         String[] empty = {};
-        BaseOptionCollection optionCollection = new BaseOptionCollection();
-        CommandLine cl = new DefaultParser().parse(optionCollection.getOptions(), empty);
-        ArgumentContext context = new ArgumentContext(new File("."), cl);
-        ReportConfiguration config = collectionParser.populateConfiguration(context);
-        ReportConfigurationTest.validateDefault(config);
+        ArgumentContext context = collectionParser.parseCommands(new File("."), empty);
+        ReportConfigurationTest.validateDefault(context.getConfiguration());
     }
 
     @ParameterizedTest

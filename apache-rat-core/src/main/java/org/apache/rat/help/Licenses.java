@@ -42,6 +42,7 @@ import org.apache.rat.configuration.builders.AbstractBuilder;
 import org.apache.rat.license.ILicense;
 import org.apache.rat.license.ILicenseFamily;
 import org.apache.rat.license.LicenseSetFactory.LicenseFilter;
+import org.apache.rat.ui.UIOptionCollection;
 
 import static java.lang.String.format;
 
@@ -64,7 +65,8 @@ public final class Licenses extends AbstractHelp {
      * @param config The configuration that contains the license information.
      * @param writer the writer to write the report to.
      */
-    public Licenses(final ReportConfiguration config, final Writer writer) {
+    public Licenses(final UIOptionCollection<?> uiOptionCollection, final ReportConfiguration config, final Writer writer) {
+        super(uiOptionCollection);
         this.config = config;
         this.licenses = config.getLicenses(LicenseFilter.ALL);
         printWriter = new PrintWriter(writer);

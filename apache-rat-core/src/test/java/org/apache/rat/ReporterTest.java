@@ -24,6 +24,7 @@ import static org.assertj.core.api.Fail.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -89,17 +90,15 @@ public class ReporterTest {
 
     ReporterTest() throws URISyntaxException {
         basedir = Resources.getExampleResource("exampleData").getPath();
-        collectionParser = new OptionCollectionParser(new BaseOptionCollection());
+        collectionParser = new OptionCollectionParser(BaseOptionCollection.builder().build());
     }
 
     @Test
-    public void testExecute() throws RatException, ParseException {
+    public void testExecute() throws RatException, ParseException, IOException {
         File output = new File(tempDirectory, "testExecute");
-        BaseOptionCollection optionCollection = new BaseOptionCollection();
-        CommandLine cl = new DefaultParser().parse(optionCollection.getOptions(), new String[]{"--output-style", "xml", "--output-file", output.getPath(), basedir});
-        ArgumentContext ctxt = new ArgumentContext(new File("."), cl);
-        ReportConfiguration config = collectionParser.populateConfiguration(ctxt);
-        ClaimStatistic statistic = new Reporter(config).execute().getStatistic();
+        BaseOptionCollection optionCollection = BaseOptionCollection.builder().build();
+        ArgumentContext ctxt = collectionParser.parseCommands(new File("."), new String[]{"--output-style", "xml", "--output-file", output.getPath(), basedir});
+        ClaimStatistic statistic = new Reporter(ctxt.getConfiguration()).execute().getStatistic();
 
         assertThat(statistic.getCounter(Type.ARCHIVE)).isEqualTo(1);
         assertThat(statistic.getCounter(Type.BINARY)).isEqualTo(2);
@@ -150,12 +149,8 @@ public class ReporterTest {
     @Test
     public void testOutputOption() throws Exception {
         File output = new File(tempDirectory, "test");
-        BaseOptionCollection optionCollection = new BaseOptionCollection();
-        CommandLine commandLine = new DefaultParser().parse(optionCollection.getOptions(), new String[]{"--output-file", output.getCanonicalPath(), basedir});
-        ArgumentContext ctxt = new ArgumentContext(new File("."), commandLine);
-
-        ReportConfiguration config = collectionParser.populateConfiguration(ctxt);
-        new Reporter(config).execute().format(config);
+        ArgumentContext ctxt = collectionParser.parseCommands(new File("."), new String[]{"--output-file", output.getCanonicalPath(), basedir});
+        new Reporter(ctxt.getConfiguration()).execute().format(ctxt.getConfiguration());
         assertThat(output.exists()).isTrue();
         String content = FileUtils.readFileToString(output, StandardCharsets.UTF_8);
         TextUtils.assertPatternInTarget("^! Unapproved:\\s*2 ", content);
@@ -166,16 +161,13 @@ public class ReporterTest {
     @Test
     public void testDefaultOutput() throws Exception {
         File output = new File(tempDirectory, "testDefaultOutput");
-        BaseOptionCollection optionCollection = new BaseOptionCollection();
+        BaseOptionCollection optionCollection = BaseOptionCollection.builder().build();
 
         PrintStream origin = System.out;
         try (PrintStream out = new PrintStream(output)) {
             System.setOut(out);
-            CommandLine commandLine = new DefaultParser().parse(optionCollection.getOptions(), new String[]{basedir});
-            ArgumentContext ctxt = new ArgumentContext(new File("."), commandLine);
-
-            ReportConfiguration config = collectionParser.populateConfiguration(ctxt);
-            new Reporter(config).execute().format(config);
+            ArgumentContext ctxt = collectionParser.parseCommands(new File("."), new String[]{basedir});
+            new Reporter(ctxt.getConfiguration()).execute().format(ctxt.getConfiguration());
         } finally {
             System.setOut(origin);
         }
@@ -195,7 +187,6 @@ public class ReporterTest {
     @Test
     public void testXMLOutput() throws Exception {
         Map<String, Map<String, String>> expected = new HashMap<>();
-        BaseOptionCollection optionCollection = new BaseOptionCollection();
         expected.put("/.hiddenDirectory", mapOf("isDirectory", "true", "mediaType", "application/octet-stream",
                 "type", "IGNORED"));
         expected.put("/ILoggerFactory.java", mapOf("encoding", "ISO-8859-1", "mediaType", "text/x-java-source",
@@ -225,11 +216,8 @@ public class ReporterTest {
                 "type", "STANDARD"));
 
         File output = new File(tempDirectory, "testXMLOutput");
-        CommandLine commandLine = new DefaultParser().parse(optionCollection.getOptions(), new String[]{"--output-style", "xml", "--output-file", output.getPath(), basedir});
-        ArgumentContext ctxt = new ArgumentContext(new File("."), commandLine);
-
-        ReportConfiguration config = collectionParser.populateConfiguration(ctxt);
-        new Reporter(config).execute().format(config);
+        ArgumentContext ctxt = collectionParser.parseCommands(new File("."), new String[]{"--output-style", "xml", "--output-file", output.getPath(), basedir});
+        new Reporter(ctxt.getConfiguration()).execute().format(ctxt.getConfiguration());
 
         assertThat(output).exists();
         Document doc = XmlUtils.toDom(java.nio.file.Files.newInputStream(output.toPath()));
@@ -509,9 +497,9 @@ public class ReporterTest {
     }
 
     static Stream<Arguments> getTestData() {
-        List<Option> unsupportedOptions = new ArrayList<>(Arg.OUTPUT_STYLE.group().getOptions());
-        unsupportedOptions.addAll(Arg.OUTPUT_FILE.group().getOptions());
-        return new ReportTestDataProvider().getOptionTests(new BaseOptionCollection(unsupportedOptions)).stream().map(testData ->
+        BaseOptionCollection.Builder builder = BaseOptionCollection.builder()
+                        .unsupported(Arg.OUTPUT_FILE);
+        return new ReportTestDataProvider().getOptionTests(builder.build()).stream().map(testData ->
                 Arguments.of(testData.getTestName(), testData));
     }
 

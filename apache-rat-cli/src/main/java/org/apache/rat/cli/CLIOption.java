@@ -20,15 +20,16 @@ package org.apache.rat.cli;
 
 import org.apache.commons.cli.Option;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rat.ui.AbstractOption;
+import org.apache.rat.ui.UIOption;
 import org.apache.rat.ui.ArgumentTracker;
+import org.apache.rat.ui.UIOptionCollection;
 
 /**
  * The CLI option definition.
  */
-public final class CLIOption extends AbstractOption<CLIOption> {
+public final class CLIOption extends UIOption<CLIOption> {
 
-    public CLIOption(final CLIOptionCollection collection, final Option option) {
+    public CLIOption(final UIOptionCollection<CLIOption> collection, final Option option) {
         super(collection, option, ArgumentTracker.extractKey(option));
     }
 

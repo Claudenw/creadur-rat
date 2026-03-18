@@ -50,7 +50,7 @@ import org.apache.rat.license.LicenseSetFactory;
 import org.apache.rat.report.claim.ClaimStatistic;
 import org.apache.rat.report.xml.writer.XmlWriter;
 
-import org.apache.rat.ui.AbstractOptionCollection;
+import org.apache.rat.ui.UIOptionCollection;
 import org.apache.rat.utils.FileUtils;
 import org.apache.rat.testhelpers.TextUtils;
 import org.apache.rat.utils.DefaultLog;
@@ -77,7 +77,7 @@ public class OptionTestDataProvider extends AbstractTestDataProvider {
      * Generates the map of UI TestData indexed by testName.
      * @return the map of UI TestData indexed by testName.
      */
-    public Map<String, TestData> getUITestMap(final AbstractOptionCollection<?> optionCollection) {
+    public Map<String, TestData> getUITestMap(final UIOptionCollection<?> optionCollection) {
         final ConfigurationException noLicenses = new ConfigurationException("At least one license must be defined");
         Map<String, TestData> result = getOptionTestMap(optionCollection);
         for (Option option : Arg.CONFIGURATION_NO_DEFAULTS.group().getOptions()) {

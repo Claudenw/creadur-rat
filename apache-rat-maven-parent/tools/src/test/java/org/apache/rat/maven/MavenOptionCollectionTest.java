@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import org.apache.commons.cli.DeprecatedAttributes;
 import org.apache.commons.cli.Option;
 import org.apache.rat.commandline.Arg;
+import org.apache.rat.utils.CasedString;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -18,9 +19,7 @@ public class MavenOptionCollectionTest {
 
     @Test
     void deprecatedOptionTest() {
-        final MavenOptionCollection  mavenOptionCollection = new MavenOptionCollection();
-        MavenOption opt = mavenOptionCollection.getMappedOption(Arg.EDIT_COPYRIGHT.find("copyright"));
-
+        MavenOption opt = MavenOptionCollection.INSTANCE.getMappedOption(Arg.EDIT_COPYRIGHT.find("copyright"));
         assertThat(opt.getDeprecated()).contains("<editCopyright>");
 
         Option deprecatedOption = Option.builder().longOpt("dep-opt")
@@ -32,35 +31,37 @@ public class MavenOptionCollectionTest {
                 .desc("This is the --dep-opt description that talks about --other-opt.")
                 .build();
 
+        Option otherOpt = Option.builder().longOpt("other-opt")
+                .desc("this is the --other-opt description.").build();
 
         try {
-            mavenOptionCollection.additionalOptions().addOption(deprecatedOption);
-            Option otherOpt = Option.builder().longOpt("other-opt")
-                    .desc("this is the --other-opt description.").build();
-            mavenOptionCollection.additionalOptions().addOption(otherOpt);
 
-            Collection<Option> opts = mavenOptionCollection.getOptions().getOptions();
+            MavenOptionCollection collection = MavenOptionCollection.builder()
+                    .uiOption(deprecatedOption)
+                    .uiOption(otherOpt)
+                    .build();
+
+            Collection<Option> opts = collection.getOptions().getOptions();
             assertThat(opts).contains(otherOpt);
             assertThat(opts).contains(deprecatedOption);
 
-            MavenOption depMaven = mavenOptionCollection.getMappedOption(deprecatedOption);
-            MavenOption otherMaven = mavenOptionCollection.getMappedOption(otherOpt);
+            MavenOption depMaven = collection.getMappedOption(deprecatedOption);
+            MavenOption otherMaven = collection.getMappedOption(otherOpt);
 
             assertThat(depMaven.getDeprecated()).contains("<otherOpt>");
             assertThat(depMaven.getMethodName()).isEqualTo("setDepOpt");
             assertThat(depMaven.getDescription()).isEqualTo("This is the <depOpt> description that talks about <otherOpt>.");
             assertThat(depMaven.getName()).isEqualTo("depOpt");
         } finally {
-            assertThat(new MavenOptionCollection().additionalOptions().getOptions()).isEmpty();
+            assertThat(MavenOptionCollection.builder().build().additionalOptions().getOptions()).isEmpty();
         }
     }
 
     @ParameterizedTest
     @MethodSource("namingTestData")
     public void namingTest(String expectedName, Option option) {
-        MavenOptionCollection collection = new MavenOptionCollection();
-        MavenOption mavenOption = collection.getMappedOption(option);
-        assertThat(mavenOption.getName()).isEqualTo(expectedName);
+        CasedString mavenName = MavenOptionCollection.createName(option);
+        assertThat(mavenName.toString()).isEqualTo(expectedName);
     }
 
     static Stream<Arguments> namingTestData() {

@@ -33,13 +33,11 @@ import org.apache.rat.ui.ArgumentTracker;
 public abstract class AbstractMaven extends AbstractMojo {
     /** The arguments that have been set */
     protected final ArgumentTracker argumentTracker;
-    /** The collection of Maven options */
-    protected final MavenOptionCollection mavenOptionCollection;
 
     protected AbstractMaven() {
-        mavenOptionCollection = new MavenOptionCollection();
-        argumentTracker = new ArgumentTracker(mavenOptionCollection.getMappedOptions().toList());
-        argumentTracker.addArg(ArgumentTracker.extractKey(Arg.EXCLUDE_STD.option()), StandardCollection.MAVEN.name());
+argumentTracker = new ArgumentTracker(MavenOptionCollection.INSTANCE);
+MavenOption mavenOption = MavenOptionCollection.INSTANCE.getMappedOption(Arg.EXCLUDE_STD.option());
+argumentTracker.addArg(mavenOption, StandardCollection.MAVEN.name());
     }
 
     /*  GENERATED METHODS */

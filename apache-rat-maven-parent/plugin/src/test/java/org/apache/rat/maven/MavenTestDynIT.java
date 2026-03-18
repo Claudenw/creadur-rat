@@ -60,7 +60,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class MavenTestDynIT {
 
     private final TestGenerator testGenerator;
-    private final MavenOptionCollection optionCollection;
     private final Map<String, Consumer<ValidatorData>> validatorEditors;
 
     /**
@@ -69,7 +68,6 @@ public class MavenTestDynIT {
      */
     public MavenTestDynIT() throws IOException {
         testGenerator = new TestGenerator();
-        optionCollection = new MavenOptionCollection();
         validatorEditors = new HashMap<>();
         populateValidatorEditors();
     }
@@ -203,7 +201,7 @@ public class MavenTestDynIT {
     void optionTest(TestData testData, @TempDir Path testPath) throws IOException, MavenInvocationException, RatException {
 
         Path baseDir = testPath.resolve(testData.getTestName());
-        String pomText = testGenerator.buildPom(optionCollection, testData);
+        String pomText = testGenerator.buildPom(testData);
         System.out.println(pomText);
         testData.setupFiles(baseDir);
         File pomFile = baseDir.resolve("pom.xml").toFile();
@@ -255,7 +253,6 @@ public class MavenTestDynIT {
      * @return the collection of Tests for the supported options.
      */
     static Collection<TestData> testData() {
-        MavenOptionCollection optionCollection = new MavenOptionCollection();
-        return new ReportTestDataProvider().getOptionTests(optionCollection);
+        return new ReportTestDataProvider().getOptionTests(MavenOptionCollection.INSTANCE);
     }
 }

@@ -18,7 +18,7 @@
  */
 package org.apache.rat.ui;
 
-public interface UI<T extends AbstractOption<T>> {
+public interface UI<T extends UIOption<T>> {
     /**
      * Gets the common name of this UI.
      * @return the common name of this UI.
@@ -32,5 +32,5 @@ public interface UI<T extends AbstractOption<T>> {
      *
      * @return the OptionFactory configuration for this UI.
      */
-    AbstractOptionCollection<T> getOptionCollection();
+    UIOptionCollection<T> getOptionCollection();
 }

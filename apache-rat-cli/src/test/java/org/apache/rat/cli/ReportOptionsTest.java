@@ -57,7 +57,7 @@ public class ReportOptionsTest {
 
 
     static Stream<Arguments> getTestData() {
-        return optionTestDataProvider.getUITestMap(new CLIOptionCollection()).values().stream().map(testData ->
+        return optionTestDataProvider.getUITestMap(CLIOptionCollection.INSTANCE).values().stream().map(testData ->
                 Arguments.of(testData.getTestName(), testData));
         // TODO add help test
     }
@@ -70,14 +70,13 @@ public class ReportOptionsTest {
     @MethodSource("getTestData")
     void testOptionsUpdateConfig(String name, TestData test) throws Exception {
         Path basePath = testPath.resolve(test.getTestName());
-        CLIOptionCollection optionCollection = new CLIOptionCollection();
         FileUtils.mkDir(basePath.toFile());
         test.setupFiles(basePath);
         if (test.getExpectedException() != null) {
-            assertThatThrownBy(() -> Report.generateReport(optionCollection, basePath.toFile(), test.getCommandLine(basePath.toString()))
+            assertThatThrownBy(() -> Report.generateReport(CLIOptionCollection.INSTANCE, basePath.toFile(), test.getCommandLine(basePath.toString()))
                     ).hasMessageContaining(test.getExpectedException().getMessage());
         } else {
-            Reporter.Output result = Report.generateReport(optionCollection, basePath.toFile(), test.getCommandLine(basePath.toString()));
+            Reporter.Output result = Report.generateReport(CLIOptionCollection.INSTANCE, basePath.toFile(), test.getCommandLine(basePath.toString()));
             ValidatorData data = new ValidatorData(result, basePath.toString());
             test.getValidator().accept(data);
         }

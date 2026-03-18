@@ -6,35 +6,24 @@ import java.util.function.Function;
 
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rat.ui.AbstractOptionCollection;
+import org.apache.rat.ui.UIOption;
+import org.apache.rat.ui.UIOptionCollection;
 
-public class CLIOptionCollection extends AbstractOptionCollection<CLIOption> {
+public class CLIOptionCollection extends UIOptionCollection<CLIOption> {
     /** The Help option */
     static final Option HELP = new Option("?", "help", false, "Print help for the RAT command line interface and exit.");
-    /** The additional options */
-    static final Options ADDITIONAL_OPTIONS = new Options();
 
-    static {
-        ADDITIONAL_OPTIONS.addOption(HELP);
+    public static CLIOptionCollection INSTANCE = new CLIOptionCollection();
+
+    private CLIOptionCollection() {
+        super(new Builder().uiOption(HELP)
+                .mapper(CLIOption::new));
     }
 
-    CLIOptionCollection() {
-        super(Collections.emptyList(), ADDITIONAL_OPTIONS);
+    private static class Builder extends UIOptionCollection.Builder<CLIOption, CLIOptionCollection.Builder> {
+        private Builder() {
+            super();
+        }
     }
 
-    @Override
-    public Function<Option, CLIOption> getMapper() {
-        return option -> new CLIOption(this, option);
-    }
-
-    @Override
-    protected Map<Option, String> defaultOverrides() {
-        return Collections.emptyMap();
-    }
-
-
-    @Override
-    public void addOverride(final Option option, final String value) {
-        throw new UnsupportedOperationException();
-    }
 }

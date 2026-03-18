@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -36,8 +36,8 @@ import org.apache.rat.utils.DefaultLog;
 import org.apache.rat.utils.Log;
 
 /**
- * Tracks arguments that are set and their values for conversion from native UI to
- * Apache Commons command line values.  Native values
+ * Tracks Arg values that are set and their values for conversion from native UI to
+ * Apache Commons command line values.
  */
 public final class ArgumentTracker {
 
@@ -52,11 +52,11 @@ public final class ArgumentTracker {
     private final Map<String, List<String>> args = new HashMap<>();
 
     /**
-     * The arguments set by the UI for the current report execution.
-     * @param uiOptionList the list of AbstractOption implementations for this UI.
+     * The arguments understood by the UI for the current report execution.
+     * @param optionCollection The AbstractOptionCollection for this UI.
      */
-    public ArgumentTracker(final List<? extends AbstractOption<?>> uiOptionList) {
-        for (AbstractOption<?> abstractOption : uiOptionList) {
+    public ArgumentTracker(final UIOptionCollection<?> optionCollection) {
+        for (UIOption<?> abstractOption : optionCollection.getMappedOptions().toList()) {
             if (abstractOption.isDeprecated()) {
                 deprecatedArgs.put(abstractOption.getName(),
                         String.format("Use of deprecated option '%s'. %s", abstractOption.getName(), abstractOption.getDeprecated()));
@@ -75,7 +75,7 @@ public final class ArgumentTracker {
     }
 
     /**
-     * Sets the deprecation report method.
+     * Sets the deprecation report method in the Apache Commons CLI processes.
      */
     private void setDeprecationReporter() {
         DeprecationReporter.setLogReporter(opt -> {
@@ -108,6 +108,12 @@ public final class ArgumentTracker {
         args.forEach((key, value) -> consumer.accept(key, new ArrayList<>(value)));
     }
 
+    /**
+     * Validate that the option is defined in Args and has not already been set.
+     * This check will verify tha only one of the keys in the group can be set.
+     * @param key the key to check
+     * @return true if the key may be set.
+     */
     private boolean validateSet(final String key) {
         final Arg arg = Arg.findArg(key);
         if (arg != null) {
@@ -137,15 +143,32 @@ public final class ArgumentTracker {
      * @param key the key for the map.
      * @param value the value to set.
      */
-    public void setArg(final String key, final String value) {
+    public void setArg(final UIOption<?> key, final String value) {
+        setArg(key.keyValue(), value);
+    }
+
+    /**
+     * Set a key and value into the argument list.
+     * Replaces any existing value.
+     * @param trackerKey the key for the map.
+     * @param value the value to set.
+     */
+    public void setArg(final String trackerKey, final String value) {
         if (value == null || StringUtils.isNotBlank(value)) {
-            if (validateSet(key)) {
-                List<String> values = new ArrayList<>();
-                if (DefaultLog.getInstance().isEnabled(Log.Level.DEBUG)) {
-                    DefaultLog.getInstance().debug(String.format("Setting %s to '%s'", key, value));
+            if (validateSet(trackerKey)) {
+                Option ratOption = Arg.findArg(trackerKey).find(trackerKey);
+                if (ratOption.hasArg()) {
+                    List<String> values = new ArrayList<>();
+                    if (DefaultLog.getInstance().isEnabled(Log.Level.DEBUG)) {
+                        DefaultLog.getInstance().debug(String.format("Setting %s to '%s'", trackerKey, value));
+                    }
+                    values.add(value);
+                    args.put(trackerKey, values);
+                } else {
+                    DefaultLog.getInstance().warn(String.format("Key '%s' does not accept arguments.", trackerKey));
                 }
-                values.add(value);
-                args.put(key, values);
+            } else {
+                DefaultLog.getInstance().warn(String.format("Key '%s' is unknown", trackerKey));
             }
         }
     }
@@ -163,49 +186,54 @@ public final class ArgumentTracker {
      * Add values to the key in the argument list.
      * empty values are ignored. If no non-empty values are present no change is made.
      * If the key does not exist, adds it.
-     * @param key the key for the map.
+     * @param option the option to add values for.
      * @param value the array of values to set.
      */
-    public void addArg(final String key, final String[] value) {
-        List<String> newValues = Arrays.stream(value).filter(StringUtils::isNotBlank).collect(Collectors.toList());
-        if (!newValues.isEmpty()) {
-            if (validateSet(key)) {
-                if (DefaultLog.getInstance().isEnabled(Log.Level.DEBUG)) {
-                    DefaultLog.getInstance().debug(String.format("Adding [%s] to %s", String.join(", ", Arrays.asList(value)), key));
-                }
-                List<String> values = args.computeIfAbsent(key, k -> new ArrayList<>());
-                values.addAll(newValues);
-            }
-        }
+    public void addArg(final UIOption<?> option, final String... value) {
+        addArg(option.keyValue(), value);
     }
 
     /**
-     * Add a value to the key in the argument list.
+     * Add values to the key in the argument list.
+     * empty values are ignored. If no non-empty values are present no change is made.
      * If the key does not exist, adds it.
-     * @param key the key for the map.
-     * @param value the value to set.
+     * @param trackerKey the key add values for.
+     * @param value the array of values to set.
      */
-    public void addArg(final String key, final String value) {
-        if (StringUtils.isNotBlank(value)) {
-            if (validateSet(key)) {
-                List<String> values = args.get(key);
-                if (DefaultLog.getInstance().isEnabled(Log.Level.DEBUG)) {
-                    DefaultLog.getInstance().debug(String.format("Adding [%s] to %s", String.join(", ", Arrays.asList(value)), key));
+    public void addArg(final String trackerKey, final String... value) {
+        List<String> newValues = Arrays.stream(value).filter(StringUtils::isNotBlank).collect(Collectors.toList());
+        if (!newValues.isEmpty()) {
+            if (validateSet(trackerKey)) {
+                Option ratOption = Arg.findArg(trackerKey).find(trackerKey);
+                if (ratOption.hasArgs()) {
+                    if (DefaultLog.getInstance().isEnabled(Log.Level.DEBUG)) {
+                        DefaultLog.getInstance().debug(String.format("Adding [%s] to %s", String.join(", ", Arrays.asList(value)), trackerKey));
+                    }
+                    List<String> values = args.computeIfAbsent(trackerKey, k -> new ArrayList<>());
+                    values.addAll(newValues);
+                } else {
+                    DefaultLog.getInstance().warn(String.format("Key '%s' does not accept %sarguments.", trackerKey,
+                            ratOption.hasArg() ? "more that one " : ""));
                 }
-                if (values == null) {
-                    values = new ArrayList<>();
-                    args.put(key, values);
-                }
-                values.add(value);
+            } else {
+                DefaultLog.getInstance().warn(String.format("Key '%s' is unknown", trackerKey));
             }
         }
     }
 
     /**
      * Remove a key from the argument list.
-     * @param key the key to remove from the map.
+     * @param option the option to remove the key for.
      */
-    public void removeArg(final String key) {
-        args.remove(key);
+    public void removeArg(final UIOption<?> option) {
+        args.remove(option.keyValue());
+    }
+
+    /**
+     * Remove a key from the argument list.
+     * @param trackerKey the key remove.
+     */
+    public void removeArg(final String trackerKey) {
+        args.remove(trackerKey);
     }
 }

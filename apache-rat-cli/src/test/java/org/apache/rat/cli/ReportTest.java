@@ -53,8 +53,6 @@ public class ReportTest {
 
     private static final ReportTestDataProvider reportTestDataProvider = new ReportTestDataProvider();
 
-    private static final CLIOptionCollection cliCollection = new CLIOptionCollection();
-
     /**
      * This method is a known workaround for
      * {@link <a href="https://github.com/junit-team/junit5/issues/2811">junit 5 issue #2811</a> }.
@@ -67,14 +65,14 @@ public class ReportTest {
 
 
     static Stream<Arguments> getTestData() {
-        Map<String, TestData> tests = reportTestDataProvider.getOptionTestMap(cliCollection);
+        Map<String, TestData> tests = reportTestDataProvider.getOptionTestMap(CLIOptionCollection.INSTANCE);
         TestData test = new TestData("", Arrays.asList(ImmutablePair.of(CLIOptionCollection.HELP, new String[]{}),
                 ImmutablePair.of(Arg.OUTPUT_FILE.option(), new String[]{"helpText"})),
                 DataUtils.NO_SETUP,
                 validatorData -> {
                     try {
                         String result = TextUtils.readFile(validatorData.getBaseDir().resolve("helpText").toFile());
-                        for (Option option : cliCollection.getOptions().getOptions()) {
+                        for (Option option : CLIOptionCollection.INSTANCE.getOptions().getOptions()) {
                             if (option.getOpt() != null) {
                                 TextUtils.assertContains("-" + option.getOpt() + (option.getLongOpt() == null ? " " : ","), result);
                             }
@@ -101,15 +99,14 @@ public class ReportTest {
     @ParameterizedTest( name = "{index} {0}")
     @MethodSource("getTestData")
     void testOptionsUpdateConfig(String name, TestData test) throws Exception {
-        CLIOptionCollection optionCollection = new CLIOptionCollection();
         Path basePath = testPath.resolve(test.getTestName());
         FileUtils.mkDir(basePath.toFile());
         test.setupFiles(basePath);
         if (test.getExpectedException() != null) {
-            assertThatThrownBy(() -> Report.generateReport(optionCollection, basePath.toFile(), test.getCommandLine(basePath.toString()))
+            assertThatThrownBy(() -> Report.generateReport(CLIOptionCollection.INSTANCE, basePath.toFile(), test.getCommandLine(basePath.toString()))
                     ).hasMessageContaining(test.getExpectedException().getMessage());
         } else {
-            Reporter.Output result = Report.generateReport(optionCollection, basePath.toFile(), test.getCommandLine(basePath.toString()));
+            Reporter.Output result = Report.generateReport(CLIOptionCollection.INSTANCE, basePath.toFile(), test.getCommandLine(basePath.toString()));
             ValidatorData data = new ValidatorData(result, basePath.toString());
             test.getValidator().accept(data);
         }

@@ -50,7 +50,6 @@ public final class Report {
      */
     public static void main(final String[] args) throws Exception {
         VersionInfo versionInfo = new VersionInfo(Report.class);
-        CLIOptionCollection optionCollection = new CLIOptionCollection();
         DefaultLog.getInstance().info(String.format("%s %s on %s %s (%s)",
                 versionInfo.getTitle(), versionInfo.getVersion(), versionInfo.getSpecTitle(), versionInfo.getSpecVersion(),
                 versionInfo.getSpecVendor()));
@@ -61,7 +60,7 @@ public final class Report {
             System.exit(0);
         }
 
-        Reporter.Output result = generateReport(optionCollection, new File("."), args);
+        Reporter.Output result = generateReport(CLIOptionCollection.INSTANCE, new File("."), args);
         if (result != null) {
             result.writeSummary(DefaultLog.getInstance().asWriter());
 
