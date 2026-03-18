@@ -91,7 +91,7 @@ public final class MavenOptionCollection extends UIOptionCollection<MavenOption>
     /**
      * The Builder for the MavenOptionCollection.
      */
-    static final class Builder extends UIOptionCollection.Builder<MavenOption, Builder> {
+    public static final class Builder extends UIOptionCollection.Builder<MavenOption, Builder> {
         private Builder() {
             super();
             unsupported(Arg.DIR).unsupported(Arg.LOG_LEVEL)
