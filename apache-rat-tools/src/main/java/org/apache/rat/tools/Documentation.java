@@ -28,6 +28,7 @@ import org.apache.rat.OptionCollection;
 import org.apache.rat.ReportConfiguration;
 import org.apache.rat.help.AbstractHelp;
 import org.apache.rat.help.Licenses;
+import org.apache.rat.ui.UIOptionCollection;
 
 import static java.lang.String.format;
 
@@ -49,7 +50,7 @@ public final class Documentation {
         ReportConfiguration config = OptionCollection.parseCommands(new File("."), args, Documentation::printUsage, true);
         if (config != null) {
             try (Writer writer = config.getWriter().get()) {
-                new Licenses(config, writer).output();
+                new Licenses(OptionCollection.BASE_OPTION_COLLECTION, config, writer).output();
             }
         }
     }

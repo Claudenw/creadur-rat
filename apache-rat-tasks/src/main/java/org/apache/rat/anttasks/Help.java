@@ -27,6 +27,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.rat.OptionCollection;
 import org.apache.rat.commandline.Arg;
 import org.apache.rat.config.exclusion.StandardCollection;
 import org.apache.rat.documentation.options.AntOptionCollection;
@@ -76,7 +77,7 @@ public class Help extends BaseAntTask {
      */
     @Override
     public void execute() {
-        org.apache.rat.help.Help helpObj = new org.apache.rat.help.Help(System.out) {
+        org.apache.rat.help.Help helpObj = new org.apache.rat.help.Help(OptionCollection.BASE_OPTION_COLLECTION, System.out) {
             /**
              * Print the usage to the specific PrintWriter.
              * @param opts The defined options.

@@ -429,7 +429,9 @@ public class Report extends BaseAntTask {
             licenses.stream().map(License::asBuilder)
                     .forEach(l -> configuration.addApprovedLicenseCategory(configuration.addLicense(l).getLicenseFamily()));
             if (helpLicenses) {
-                new org.apache.rat.help.Licenses(configuration, new PrintWriter(DefaultLog.getInstance().asWriter())).printHelp();
+                new org.apache.rat.help.Licenses(
+                        OptionCollection.BASE_OPTION_COLLECTION,
+                        configuration, new PrintWriter(DefaultLog.getInstance().asWriter())).printHelp();
             }
             return configuration;
         } catch (IOException | ImplementationException e) {
