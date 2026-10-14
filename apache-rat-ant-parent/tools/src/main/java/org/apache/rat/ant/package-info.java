@@ -17,6 +17,6 @@
  * under the License.
  */
 /**
- * The package for the Ant UI
+ * The package containing the Ant UI definitions for AntOption and AntOptionCollection.
  */
 package org.apache.rat.ant;

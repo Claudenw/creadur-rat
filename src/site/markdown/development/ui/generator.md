@@ -23,7 +23,7 @@
 
 The generator is the bit of code that ties the new UI to the RAT CLI. In this section we will explore how the RAT core module exposes the information necessary to build a valuable new UI. We will be using the Maven tooling code in `apache-rat-tools` as the basis of the examples in this section. As always, the current code base is the source of truth.
 
-There are two implementations of the Generator concept `AntGenerator` and `MavenGenerator`.
+There are two implementations of the Generator concept `tools` and `MavenGenerator`.
 
 ## The MavenGenerator
 

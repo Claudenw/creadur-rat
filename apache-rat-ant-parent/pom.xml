@@ -41,7 +41,7 @@
     </properties>
     <modules>
         <module>tools</module>
-        <module>apache-rat-tasks</module>
+        <module>tasks</module>
     </modules>
     <dependencyManagement>
         <dependencies>
