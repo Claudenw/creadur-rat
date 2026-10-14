@@ -91,4 +91,4 @@ The class created by the Generator should have methods that represent all the op
 #### [UI specific code](ui/ui_specific.html)
 
 The UI specific code uses extends the class created by the Generator and adds additional UI specific options and generally performs the necessary options to hook the new UI into the system being supported.
-Examples of this type of code can be found in the `apache-rat-tasks` (Ant) and `apache-rat-plugin` (Maven) modules.
+Examples of this type of code can be found in the `tasks` (Ant) and `apache-rat-plugin` (Maven) modules.

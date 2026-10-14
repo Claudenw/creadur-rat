@@ -73,7 +73,7 @@ The `check()` method performs custom checks and logging for Maven specific issue
 
 ## Ant processing
 
-The Ant processing is performed by the `Report` class in the `apache-rat-tasks` module.
+The Ant processing is performed by the `Report` class in the `tasks` module.
 It follows the same basic processing path as the Maven processing except that it handle Ant specific requirements and options.
 The class has an `execute()` method that looks very similar to the Maven version:
 

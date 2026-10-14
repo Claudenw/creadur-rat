@@ -1,0 +1,436 @@
+<?xml version='1.0'?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one   *
+ or more contributor license agreements.  See the NOTICE file *
+ distributed with this work for additional information        *
+ regarding copyright ownership.  The ASF licenses this file   *
+ to you under the Apache License, Version 2.0 (the            *
+ "License"); you may not use this file except in compliance   *
+ with the License.  You may obtain a copy of the License at   *
+                                                              *
+   http://www.apache.org/licenses/LICENSE-2.0                 *
+                                                              *
+ Unless required by applicable law or agreed to in writing,   *
+ software distributed under the License is distributed on an  *
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY       *
+ KIND, either express or implied.  See the License for the    *
+ specific language governing permissions and limitations      *
+ under the License.                                           *
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<project name='report-normal-operation'
+	default="allTests"
+	xmlns:au="antlib:org.apache.ant.antunit"
+	xmlns:rat="antlib:org.apache.rat.anttasks">
+
+	<property name="UNKNOWN" value="   ?????    ?????         Unknown license" />
+	<property name="EXAMPLE" value="   EXAMPL   EXAMPLE       Yet Another Software License (EXAMPLE) 1.0" />
+	<property name="YASL"    value="   YASL1    YASL1         Yet Another Software License (YASL) 1.0" />
+	<property name="APACHE"  value="   AL       AL            Apache License Version 2.0" />
+
+	<property name="output.dir" location="../../../../target/testoutput" />
+
+	<property name="reports.dir"
+		location="../../../../target/testoutput/reports" />
+
+	<property name="resource.dir"
+		location="../../../../src/test/resources/antunit" />
+
+	<mkdir dir="${output.dir}/dest" />
+
+	<mkdir dir="${reports.dir}-frames" />
+
+	<path id="all-classes-needed-for-tests">
+		<pathelement location="${jar.name}" />
+		<pathelement path="${test.classpath}" />
+		<pathelement location="${output.dir}/dest" />
+	</path>
+
+	<taskdef uri="antlib:org.apache.ant.antunit"
+		resource="org/apache/ant/antunit/antlib.xml"
+		classpathref="all-classes-needed-for-tests"
+		loaderref="testloader" />
+
+	<taskdef uri="antlib:org.apache.rat.anttasks"
+		resource="org/apache/rat/anttasks/antlib.xml"
+		classpathref="all-classes-needed-for-tests"
+		loaderref="testloader" />
+
+	<typedef name="matcher" classname="org.example.Matcher"
+		classpath="${test.classpath}"
+		loaderref="testloader" />
+
+	<typedef name="matcherBuilder" classname="org.example.MatcherBuilder"
+		classpath="${test.classpath}"
+		loaderref="testloader" />
+
+	<target name="setUp">
+		<pathconvert dirsep="/" property="file.name">
+			<path>
+				<pathelement location="${ant.file}" />
+			</path>
+		</pathconvert>
+		<property name="expectedOutputXML"
+			value='&lt;resource encoding="ISO-8859-1" mediaType="application/xml" name="/report-normal-operation.xml" type="STANDARD"' />
+		<property name="expectedOutputXML2" value='family="AL   "' />
+	</target>
+
+	<target name="allTests">
+		<au:antunit xmlns:au="antlib:org.apache.ant.antunit"
+			failonerror="true" >
+			<file file="${ant.file}" />
+			<au:plainlistener toDir="${output.dir}" />
+			<propertyset>
+				<propertyref name="test.classpath" />
+				<propertyref name="jar.name" />
+			</propertyset>
+		</au:antunit>
+	</target>
+
+	<target name="tearDown">
+		<delete file="${output.dir}/selftest.report" quiet="true" />
+	</target>
+
+		<target name="testWithReportSentToAnt">
+			<rat:report>
+				<file file="${ant.file}" />
+			</rat:report>
+		</target>
+
+		<target name="testWithReportSentToFile" depends="fileReportTest">
+			<rat:report reportFile="${report.file}">
+				<file file="${ant.file}" />
+			</rat:report>
+			<copy overwrite="true" file="${report.file}" toFile="${reports.dir}/TEST-testwithReportSentToFile.out"/>
+			<au:assertFileExists file="${report.file}" />
+		</target>
+
+		<target name="testXMLReportSentToFile" depends="fileReportTest">
+			<rat:report reportFile="${report.file}.xml" format="xml">
+				<file file="${ant.file}" />
+			</rat:report>
+			<copy overwrite="true" file="${report.file}.xml" toFile="${reports.dir}/TEST-testXMLReportSentToFile.xml"/>
+			<au:assertFileExists file="${report.file}.xml" />
+			<assertReportContains text="${expectedOutputXML}"
+				file="${report.file}.xml" />
+			<assertReportContains text="${expectedOutputXML2}"
+				file="${report.file}.xml" />
+		</target>
+
+	<target name="testWithALUnknown">
+		<rat:report useDefaultLicenses="false">
+			<file file="${ant.file}" />
+			<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+			<rat:license
+				family="YASL1"
+				notes="Interesting License">
+				<!-- non existent copyright in this file -->
+				<rat:copyright owner="non existent" />
+			</rat:license>
+		</rat:report>
+	</target>
+
+		<target name="testWithALUnknownSentToFile" depends="fileReportTest">
+<!--			 create a non-matching license, ignore all defaults and submit the-->
+<!--			xml as the report -->
+			<rat:report useDefaultLicenses="false" reportFile="${report.file}">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					 <!--  non existent copyright in this file  -->
+					<rat:copyright owner="non existent" />
+				</rat:license>
+			</rat:report>
+			<copy overwrite="true" file="${report.file}" toFile="${reports.dir}/TEST-testWithALUnknownSentToFile.out"/>
+			<assertReportContains text="${UNKNOWN}" />
+		</target>
+
+		<target name="testCustomMatcher">
+			<rat:report useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='EXMPL' name='Yet Another Software License (EXAMPLE) 1.0'/>
+				<rat:license
+					family="EXMPL"
+					notes="Interesting License">
+					<matcher />
+				</rat:license>
+			</rat:report>
+		</target>
+
+		<target name="testCustomMatcherBuilder">
+			<rat:report useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='EXMPL' name='Yet Another Software License (EXAMPLE) 1.0'/>
+				<rat:license
+					family="EXMPL"
+					notes="Interesting License">
+					<matcherBuilder />
+				</rat:license>
+			</rat:report>
+		</target>
+
+		<target name="testAnyBuild">
+			<rat:report useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:any>
+						<rat:copyright start="2023" end="2024" owner="public domain" />
+						<rat:text>the text</rat:text>
+					</rat:any>
+				</rat:license>
+			</rat:report>
+		</target>
+
+		<target name="testAllBuild">
+			<rat:report useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:all>
+						<rat:text text="the other text" />
+						<rat:text>the text</rat:text>
+					</rat:all>
+				</rat:license>
+			</rat:report>
+		</target>
+
+		<target name="testCopyrightBuild">
+			<rat:report useDefaultLicenses="false">
+				<file file="${resource.dir}/index.apt" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:copyright start="2023" end="2024" owner="public domain" />
+				</rat:license>
+			</rat:report>
+		</target>
+
+		<target name="testNotBuild">
+			<rat:report useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:not>
+						 <!--  non existent copyright in this file  -->
+						<rat:copyright owner="non existent" />
+					</rat:not>
+				</rat:license>
+			</rat:report>
+		</target>
+
+		<target name="testRegexAttributeBuild">
+			<rat:report useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:regex expr="regex\sregex" />
+				</rat:license>
+			</rat:report>
+		</target>
+
+		<target name="testRegexNestedTextBuild">
+			<rat:report useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:regex>regex\sregex</rat:regex>
+				</rat:license>
+			</rat:report>
+		</target>
+
+		<target name="testSpdxAttributeBuild">
+			<rat:report useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:spdx name="Apache-2.0" />
+				</rat:license>
+			</rat:report>
+		</target>
+
+		<target name="testSpdxNestedTextBuild">
+			<rat:report useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:spdx>Apache-2.0</rat:spdx>
+				</rat:license>
+			</rat:report>
+		</target>
+
+		<target name="testTextAttributeBuild">
+			<rat:report useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:text text="The text" />
+				</rat:license>
+			</rat:report>
+		</target>
+
+		<target name="testTextNestedTextBuild">
+			<rat:report useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:text>The text</rat:text>
+				</rat:license>
+			</rat:report>
+		</target>
+
+		<target name="testLicenseNotApprovedSentToFile"
+			depends="fileReportTest">
+			<rat:report reportFile="${report.file}"
+				useDefaultLicenses="false"
+				removeApprovedLicense="YASL1">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:text>License Family Name: Yet Another Software License
+						(YASL) 1.0</rat:text>
+				</rat:license>
+			</rat:report>
+			<copy overwrite="true" file="${report.file}" toFile="${reports.dir}/TEST-testLicenseNotApprovedSentToFile.out"/>
+			<assertReportContains text="${YASL}" />
+		</target>
+
+		<target name="testLicenseApprovedSentToFile"
+			depends="fileReportTest">
+			<rat:report reportFile="${report.file}"
+				useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:text>License Family Name: Yet Another Software License
+						(YASL) 1.0</rat:text>
+				</rat:license>
+			</rat:report>
+			<copy overwrite="true" file="${report.file}" toFile="${reports.dir}/TEST-testLicenseApprovedSentToFile.out"/>
+			<assertReportDoesntContain text="!S /report-normal-operation.xml" />
+			<assertReportContains text="${YASL}" />
+		</target>
+
+		<target name="testNoLicenseMatchSentToFile"
+			depends="fileReportTest">
+			<rat:report reportFile="${report.file}"
+				useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					 <!--  non existent copyright in this file  -->
+					<rat:copyright owner="non existent" />
+				</rat:license>
+			</rat:report>
+			<copy overwrite="true" file="${report.file}" toFile="${reports.dir}/TEST-testNoLicenseMatchSentToFile.out"/>
+			<assertReportContains text="${UNKNOWN}" />
+		</target>
+
+		<target name="testLicenseExpandsProperties"
+			depends="fileReportTest">
+			<property name="test.version" value="1.0" />
+			<rat:report reportFile="${report.file}"
+				useDefaultLicenses="false">
+				<file file="${ant.file}" />
+				<rat:family id='YASL1' name='Yet Another Software License (YASL) 1.0'/>
+				<rat:license
+					family="YASL1"
+					notes="Interesting License">
+					<rat:text>name="Yet Another Software License (YASL)
+						${test.version}</rat:text>
+				</rat:license>
+			</rat:report>
+			<assertReportContains text="${YASL}" />
+		</target>
+
+		<target name="fileReportTest" depends="setUp">
+			<property name="report.file" location="${output.dir}/selftest.report" />
+			<au:assertFileDoesntExist file="${report.file}" />
+			<macrodef name="assertReportContains">
+				<attribute name="text" />
+				<attribute name="file" default="${report.file}" />
+				<sequential>
+					<loadfile srcFile="@{file}" property="report" />
+					<au:assertTrue
+						message="expected report to contain '@{text}' but was '${report}'">
+						<contains string="${report}" substring="@{text}" />
+					</au:assertTrue>
+				</sequential>
+			</macrodef>
+			<macrodef name="assertReportDoesntContain">
+				<attribute name="text" />
+				<attribute name="file" default="${report.file}" />
+				<sequential>
+					<loadfile srcFile="@{file}" property="report" />
+					<au:assertFalse
+						message="expected report to not contain '@{text}' but was
+	'${report}'">
+						<contains string="${report}" substring="@{text}" />
+					</au:assertFalse>
+				</sequential>
+			</macrodef>
+		</target>
+
+	<!-- <target name="prepareCustomMatcher">
+		<echo>output.dir is ${output.dir}</echo>
+		<mkdir dir="${output.dir}/dest" />
+		<mkdir dir="${output.dir}/src/org/example" />
+		<echo file="${output.dir}/src/org/example/MyMatcher.java"><![CDATA[
+package org.example;
+
+import org.apache.rat.analysis.IHeaders;
+import org.apache.rat.analysis.matchers.AbstractHeaderMatcher;
+import org.apache.rat.config.parameters.ComponentType;
+import org.apache.rat.config.parameters.ConfigComponent;
+
+@ConfigComponent(type = ComponentType.MATCHER, name = "myMatcher", desc = "matches everything.")
+public class MyMatcher extends AbstractHeaderMatcher {
+    public MyMatcher() {
+        super("MyCustomMatcher");
+    }
+
+    @Override
+    public boolean matches(IHeaders headers) {
+        return true;
+    }
+}
+]]></echo>
+
+		<javac srcdir="${output.dir}/src" destdir="${output.dir}/dest"
+			classpath="${test.classpath}" fork="true" />
+		<typedef name="myMatcher" classname="org.example.MyMatcher"
+			classpath="${output.dir}/dest"
+			loaderref="testloader" />
+	</target> -->
+
+</project>
